@@ -1,0 +1,53 @@
+import "dotenv/config"
+import { serve } from "@hono/node-server"
+import { Hono } from "hono"
+import { cors } from "hono/cors"
+import { logger } from "hono/logger"
+import authRoutes from "./routes/auth.routes.js"
+import boardRoutes from "./routes/board.routes.js"
+import { connectDB } from "./lib/db.js"
+
+const app = new Hono()
+
+// Middleware de Logs
+app.use(logger())
+
+// Habilitar CORS para permitir conexión desde el Frontend
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+)
+
+// Inicializar conexión a la base de datos MongoDB
+connectDB().catch((err) => {
+  console.error("Error al inicializar la base de datos:", err)
+})
+
+// Healthcheck endpoint
+app.get("/", (c) => {
+  return c.json({
+    status: "ok",
+    message: "Noty Backend API running",
+    timestamp: new Date().toISOString(),
+  })
+})
+
+// Rutas de Autenticación (/auth/google)
+app.route("/auth", authRoutes)
+
+// Rutas de Tablero y Notas (/board/my-notes/:username, /board/send/:username, /board/notes/:noteId)
+app.route("/board", boardRoutes)
+
+const port = Number(process.env.PORT) || 3000
+
+console.log(`🚀 Server is running on http://localhost:${port}`)
+console.log(`🔑 GOOGLE_CLIENT_ID cargado: ${process.env.GOOGLE_CLIENT_ID ? "SÍ ✅ (" + process.env.GOOGLE_CLIENT_ID.substring(0, 15) + "...)" : "NO ❌"}`)
+
+serve({
+  fetch: app.fetch,
+  port,
+})
