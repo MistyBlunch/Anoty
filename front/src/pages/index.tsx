@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import {
@@ -23,11 +23,14 @@ interface UserState {
 export default function Home() {
   const router = useRouter()
   const [isLoggingIn, setIsLoggingIn] = useState(false)
-  const [user, setUser] = useState<UserState | null>(() => {
-    if (typeof window === 'undefined') return null
+  const [user, setUser] = useState<UserState | null>(null)
+
+  useEffect(() => {
     const saved = localStorage.getItem('user')
-    return saved ? JSON.parse(saved) : null
-  })
+    if (saved) {
+      setUser(JSON.parse(saved))
+    }
+  }, [])
 
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -73,20 +76,20 @@ export default function Home() {
         <link rel="icon" href="/favicon.svg" />
       </Head>
 
-      <div className="min-h-screen bg-[#0b0b12] text-slate-100 selection:bg-purple-500 selection:text-white relative overflow-hidden">
+      <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white relative overflow-hidden">
         {/* Background Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-purple-600/20 via-pink-500/20 to-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
-        <div className="absolute top-[600px] right-0 w-[500px] h-[500px] bg-purple-900/10 blur-[150px] pointer-events-none rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-teal-500/20 via-cyan-500/20 to-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
+        <div className="absolute top-[600px] right-0 w-[500px] h-[500px] bg-teal-900/10 blur-[150px] pointer-events-none rounded-full" />
 
         {/* Navbar */}
-        <header className="sticky top-0 z-50 glass-panel border-b border-white/10 px-6 py-4">
+        <header className="sticky top-0 z-50 glass-panel border-b border-slate-200 px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/30">
                 <MessageSquareHeart className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold tracking-tight text-white font-mono">
-                Noty<span className="text-pink-500">.</span>
+              <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
+                Noty<span className="text-cyan-500">.</span>
               </span>
             </div>
 
@@ -94,14 +97,14 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
+                  className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Mi Muro Privado</span>
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
                   title="Cerrar sesión"
                 >
                   <LogOut className="w-4 h-4" />
@@ -111,7 +114,7 @@ export default function Home() {
               <button
                 onClick={() => loginWithGoogle()}
                 disabled={isLoggingIn}
-                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700/80 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-purple-500/50 cursor-pointer active:scale-95"
+                className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-teal-500/50 cursor-pointer active:scale-95"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
@@ -132,17 +135,17 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-purple-500/30 text-purple-300 text-xs font-semibold uppercase tracking-wider mb-8 shadow-inner">
-              <Sparkles className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-teal-500/30 text-teal-700 text-xs font-semibold uppercase tracking-wider mb-8 shadow-inner">
+              <Sparkles className="w-3.5 h-3.5 text-teal-500 animate-pulse" />
               <span>Tus mensajes y dibujos anónimos, 100% privados</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
               Recibe notas y dibujos secretos de tus amigos <br className="hidden sm:block" />
               <span className="gradient-text">que solo TÚ podrás ver</span>
             </h1>
 
-            <p className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="text-slate-600 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
               Crea tu muro privado en 1 segundo con Google. Comparte tu enlace personal y recibe mensajes y dibujos a mano alzada. Tu muro es totalmente privado.
             </p>
 
@@ -174,22 +177,22 @@ export default function Home() {
               )}
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 text-xs text-slate-400">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Sin contraseñas</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 100% Privado para ti</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Amigos sin registro</span>
+            <div className="mt-8 flex items-center justify-center gap-6 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Sin contraseñas</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 100% Privado para ti</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Amigos sin registro</span>
             </div>
           </motion.div>
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-white/10 py-10 px-6 text-center text-xs text-slate-500 absolute z-10 glass-panel w-full bottom-0">
+        <footer className="border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500 absolute z-10 glass-panel w-full bottom-0">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-purple-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-teal-600 flex items-center justify-center">
                 <MessageSquareHeart className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-slate-300 font-mono text-sm">Noty</span>
+              <span className="font-bold text-slate-700 font-mono text-sm">Noty</span>
             </div>
             <p>© 2026 Noty App. Mensajes y dibujos anónimos y privados.</p>
           </div>

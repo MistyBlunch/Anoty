@@ -13,6 +13,10 @@ export interface INote {
   rotation?: number
   authorName?: string
   authorAvatar?: string
+  isSeen?: boolean
+  positionSet?: boolean
+  z?: number
+  transparent?: boolean | null
   createdAt?: Date
   updatedAt?: Date
 }
@@ -66,6 +70,22 @@ const noteSchema = new mongoose.Schema<INote>(
     },
     authorAvatar: {
       type: String,
+    },
+    isSeen: {
+      type: Boolean,
+      default: false,
+    },
+    positionSet: {
+      type: Boolean,
+      default: false,
+    },
+    z: {
+      type: Number,
+      default: 0,
+    },
+    transparent: {
+      type: Boolean,
+      default: null,
     },
   },
   {

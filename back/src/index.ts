@@ -5,6 +5,7 @@ import { cors } from "hono/cors"
 import { logger } from "hono/logger"
 import authRoutes from "./routes/auth.routes.js"
 import boardRoutes from "./routes/board.routes.js"
+import publicBoardRoutes from "./routes/publicboard.routes.js"
 import { connectDB } from "./lib/db.js"
 
 const app = new Hono()
@@ -41,6 +42,9 @@ app.route("/auth", authRoutes)
 
 // Rutas de Tablero y Notas (/board/my-notes/:username, /board/send/:username, /board/notes/:noteId)
 app.route("/board", boardRoutes)
+
+// Rutas de Muros Públicos (/public-boards/:username, /public/:slug)
+app.route("/", publicBoardRoutes)
 
 const port = Number(process.env.PORT) || 3000
 
