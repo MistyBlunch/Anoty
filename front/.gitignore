@@ -21,9 +21,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Local env files (production/overrides do not commit)
-.env*.local
-.env.*.local
+# Local env files
+.env*
+!.env.template
 
 # Typescript
 *.tsbuildinfo
