@@ -34,6 +34,11 @@ export function useDrawings({ user, fitToContent, findVisibleSlot }: UseDrawings
   const initializedRef = useRef(false)
 
   useEffect(() => {
+    if (user) refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  useEffect(() => {
     return () => {
       if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current)
     }

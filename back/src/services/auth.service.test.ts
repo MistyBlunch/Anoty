@@ -1,8 +1,13 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeAll } from "vitest"
+import { decode } from "hono/jwt"
 import { createAuthService } from "./auth.service.js"
 import type { UserRepository } from "../repositories/user.repository.js"
 import type { GoogleIdTokenVerifier } from "./google-token.service.js"
 import { AppError } from "../lib/error.js"
+
+beforeAll(() => {
+  process.env.JWT_SECRET = "test-secret"
+})
 
 function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   return {
@@ -30,7 +35,11 @@ describe("auth.service", () => {
     expect(create.mock.calls[0][0].username).toBe("emma")
     expect(result.success).toBe(true)
     expect(result.user.username).toBe("emma")
-    expect(result.token).toContain("jwt-google-token-")
+
+    const { payload } = decode(result.token)
+    expect(payload.sub).toBe("new-id")
+    expect(payload.username).toBe("emma")
+    expect(payload.exp).toBeGreaterThan(Math.floor(Date.now() / 1000))
   })
 
   it("incrementa el username con contador hasta encontrar uno libre", async () => {

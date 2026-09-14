@@ -1,9 +1,11 @@
-import { Hono } from "hono"
+import { Hono, type Context } from "hono"
 import { zValidator } from "@hono/zod-validator"
 import { createNoteSchema, updateNotePositionSchema } from "../schemas/board.schema.js"
 import { mongoUserRepository } from "../repositories/user.repository.js"
 import { mongoNoteRepository } from "../repositories/note.repository.js"
 import { createBoardService } from "../services/board.service.js"
+import { authMiddleware } from "../middleware/auth.middleware.js"
+import { AppError } from "../lib/error.js"
 
 const board = new Hono()
 const boardService = createBoardService({
@@ -24,20 +26,23 @@ board.get("/user/:username", async (c) => {
 })
 
 // GET /board/my-notes/:username - Obtener las notas recibidas por el dueño del muro (Privado)
-board.get("/my-notes/:username", async (c) => {
+board.get("/my-notes/:username", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
+  assertOwnUsername(c, username)
   return c.json(await boardService.getMyNotes(username))
 })
 
 // GET /board/my-notes/:username/unseen-count - Conteo de dibujos nuevos sin ver (Privado)
-board.get("/my-notes/:username/unseen-count", async (c) => {
+board.get("/my-notes/:username/unseen-count", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
+  assertOwnUsername(c, username)
   return c.json(await boardService.getUnseenCount(username))
 })
 
 // POST /board/my-notes/:username/seen - Marcar todos los dibujos recibidos como vistos (Privado)
-board.post("/my-notes/:username/seen", async (c) => {
+board.post("/my-notes/:username/seen", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
+  assertOwnUsername(c, username)
   return c.json(await boardService.markAllSeen(username))
 })
 
@@ -55,18 +60,25 @@ board.post(
 // PATCH /board/notes/:noteId - Actualizar posición/tamaño de una nota (Privado)
 board.patch(
   "/notes/:noteId",
+  authMiddleware,
   zValidator("json", updateNotePositionSchema, validationError),
   async (c) => {
     const noteId = c.req.param("noteId")
     const updates = c.req.valid("json")
-    return c.json(await boardService.updateNote(noteId, updates))
+    return c.json(await boardService.updateNote(noteId, c.get("authUser").username, updates))
   },
 )
 
-// DELETE /board/notes/:noteId - Eliminar una nota recibida
-board.delete("/notes/:noteId", async (c) => {
+// DELETE /board/notes/:noteId - Eliminar una nota recibida (Privado)
+board.delete("/notes/:noteId", authMiddleware, async (c) => {
   const noteId = c.req.param("noteId")
-  return c.json(await boardService.deleteNote(noteId))
+  return c.json(await boardService.deleteNote(noteId, c.get("authUser").username))
 })
+
+function assertOwnUsername(c: Context, username: string) {
+  if (username !== c.get("authUser").username) {
+    throw new AppError(403, "No tienes permiso para acceder a este muro")
+  }
+}
 
 export default board

@@ -75,11 +75,11 @@ describe("board.service", () => {
   })
 
   it("updateNote aplica updates y guarda", async () => {
-    const note = { _id: "n1", x: 0, y: 0, width: 200 }
+    const note = { _id: "n1", boardUsername: "emma", x: 0, y: 0, width: 200 }
     const save = vi.fn(async (n: any) => n)
     const svc = service({}, { findById: async () => note as any, save })
 
-    const res = await svc.updateNote("n1", { x: 100, y: 50 })
+    const res = await svc.updateNote("n1", "emma", { x: 100, y: 50 })
 
     expect(res.note).toMatchObject({ x: 100, y: 50 })
     expect(save).toHaveBeenCalled()
@@ -87,11 +87,29 @@ describe("board.service", () => {
 
   it("updateNote lanza 404 si la nota no existe", async () => {
     const svc = service({}, { findById: async () => null })
-    await expect(svc.updateNote("x", {})).rejects.toMatchObject({ status: 404, message: "Nota no encontrada" })
+    await expect(svc.updateNote("x", "emma", {})).rejects.toMatchObject({ status: 404, message: "Nota no encontrada" })
+  })
+
+  it("updateNote lanza 403 si el dueño no corresponde", async () => {
+    const svc = service({}, { findById: async () => ({ _id: "n1", boardUsername: "otra" }) as any })
+    await expect(svc.updateNote("n1", "emma", {})).rejects.toMatchObject({ status: 403 })
+  })
+
+  it("deleteNote elimina la nota del dueño", async () => {
+    const deleteById = vi.fn(async () => ({ _id: "n1" }) as any)
+    const svc = service({}, { findById: async () => ({ _id: "n1", boardUsername: "emma" }) as any, deleteById })
+    const res = await svc.deleteNote("n1", "emma")
+    expect(deleteById).toHaveBeenCalledWith("n1")
+    expect(res.success).toBe(true)
+  })
+
+  it("deleteNote lanza 403 si el dueño no corresponde", async () => {
+    const svc = service({}, { findById: async () => ({ _id: "n1", boardUsername: "otra" }) as any })
+    await expect(svc.deleteNote("n1", "emma")).rejects.toMatchObject({ status: 403 })
   })
 
   it("deleteNote lanza 404 si la nota no existe", async () => {
-    await expect(service({}, { deleteById: async () => null }).deleteNote("x")).rejects.toMatchObject({
+    await expect(service({}, {}).deleteNote("x", "emma")).rejects.toMatchObject({
       status: 404,
     })
   })

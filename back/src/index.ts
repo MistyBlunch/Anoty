@@ -42,7 +42,7 @@ connectDB().catch((err) => {
 app.get("/", (c) => {
   return c.json({
     status: "ok",
-    message: "Noty Backend API running",
+    message: "Anoty Backend API running",
     timestamp: new Date().toISOString(),
   })
 })

@@ -11,7 +11,7 @@ export default function Logo({ onClick }: LogoProps) {
         <MessageSquareHeart className="w-6 h-6 text-white" />
       </div>
       <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
-        Noty<span className="text-cyan-500">.</span>
+        Anoty<span className="text-cyan-500">.</span>
       </span>
     </div>
   )

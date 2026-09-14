@@ -1,6 +1,7 @@
 import type { UserRepository } from "../repositories/user.repository.js"
 import type { GoogleIdTokenVerifier } from "./google-token.service.js"
 import { AppError } from "../lib/error.js"
+import { signSessionToken } from "../lib/auth.js"
 
 export interface AuthResult {
   success: boolean
@@ -58,7 +59,7 @@ export function createAuthService(
     return {
       success: true,
       message: "Autenticación con Google exitosa",
-      token: `jwt-google-token-${user._id}`,
+      token: await signSessionToken(user),
       user: {
         id: user._id as string,
         username: user.username,

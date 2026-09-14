@@ -30,7 +30,7 @@ export default function SendNote() {
   return (
     <>
       <Head>
-        <title>{`Envía una nota anónima a @${username || ""} – Noty`}</title>
+        <title>{`Envía una nota anónima a @${username || ""} – Anoty`}</title>
         <meta
           name="description"
           content={`Envía un mensaje o dibujo anónimo a @${username}. Solo ellos podrán verlo.`}

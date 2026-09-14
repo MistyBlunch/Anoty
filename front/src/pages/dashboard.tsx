@@ -27,7 +27,7 @@ import PublicControls from "@/components/dashboard/PublicControls"
 
 export default function Dashboard() {
   const router = useRouter()
-  const { user, logout } = useAuth()
+  const { user, logout, isReady } = useAuth()
 
   const [mode, setMode] = useState<"inbox" | "public">("inbox")
   const modeRef = useRef(mode)
@@ -223,7 +223,7 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `dibujo-noty.svg`
+    link.download = `dibujo-anoty.svg`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -248,7 +248,7 @@ export default function Dashboard() {
       URL.revokeObjectURL(url)
       const link = document.createElement("a")
       link.href = canvas.toDataURL("image/png")
-      link.download = `dibujo-noty.png`
+      link.download = `dibujo-anoty.png`
       link.click()
     }
     img.onerror = () => {
@@ -321,10 +321,24 @@ export default function Dashboard() {
       ? "Arrastra tus dibujos desde el panel izquierdo • Mueve y reordena como quieras"
       : "Mantén y arrastra el fondo para moverte • Rueda para zoom • Arrastra un dibujo para moverlo"
 
+  if (!isReady) {
+    return (
+      <>
+        <Head>
+          <title>Mi Muro Privado – Anoty</title>
+          <meta name="robots" content="noindex" />
+        </Head>
+        <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
+          <HeaderShell center={<span className="text-slate-400 text-sm">Validando sesión...</span>} />
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <Head>
-        <title>Mi Muro Privado – Noty</title>
+        <title>Mi Muro Privado – Anoty</title>
         <meta name="description" content="Tu tablero privado de dibujos anónimos." />
         <meta name="robots" content="noindex" />
       </Head>
@@ -347,7 +361,7 @@ export default function Dashboard() {
                   }`}
                 >
                   <Inbox className="w-4 h-4" />
-                  Mis notys
+                  Mis anotys
                 </button>
                 <button
                   onClick={() => setMode("public")}

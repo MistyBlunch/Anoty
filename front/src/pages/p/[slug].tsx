@@ -112,7 +112,7 @@ export default function PublicBoardView() {
     return (
       <>
         <Head>
-          <title>Cargando muro... – Noty</title>
+          <title>Cargando muro... – Anoty</title>
         </Head>
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <div className="text-center">
@@ -128,7 +128,7 @@ export default function PublicBoardView() {
     return (
       <>
         <Head>
-          <title>Muro no encontrado – Noty</title>
+          <title>Muro no encontrado – Anoty</title>
         </Head>
         <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
           <HeaderShell onLogoClick={() => router.push("/")} />
@@ -148,7 +148,7 @@ export default function PublicBoardView() {
                 className="inline-flex items-center gap-2 bg-teal-600 text-white font-semibold px-6 py-3 rounded-xl text-sm shadow-lg hover:bg-teal-500 transition-colors cursor-pointer"
               >
                 <Home className="w-4 h-4" />
-                Volver a Noty
+                Volver a Anoty
               </button>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function PublicBoardView() {
   return (
     <>
       <Head>
-        <title>{`${title} – Noty`}</title>
+        <title>{`${title} – Anoty`}</title>
         <meta name="description" content={`Muro público de dibujos anónimos: ${title}`} />
       </Head>
 

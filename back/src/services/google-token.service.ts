@@ -56,22 +56,6 @@ export const googleTokenVerifier: GoogleIdTokenVerifier = {
       }
     }
 
-    // Caso 3: Fallback modo desarrollo
-    const parts = idToken.split(".")
-    if (parts.length === 3) {
-      const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"))
-      return {
-        sub: payload.sub || "mock_google_id_" + Date.now(),
-        email: payload.email || "user@gmail.com",
-        name: payload.name || "Usuario Google",
-        picture: payload.picture || "",
-      }
-    }
-
-    return {
-      sub: "google_user_" + idToken.substring(0, 10),
-      email: `google_${idToken.substring(0, 5)}@gmail.com`,
-      name: "Usuario Google",
-    }
+    throw new AppError(401, "Token de Google inválido o expirado")
   },
 }

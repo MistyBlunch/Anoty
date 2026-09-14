@@ -96,10 +96,13 @@ export function createBoardService(deps: {
     }
   }
 
-  const updateNote = async (noteId: string, updates: UpdateNotePositionInput) => {
+  const updateNote = async (noteId: string, ownerUsername: string, updates: UpdateNotePositionInput) => {
     const note = await noteRepo.findById(noteId)
     if (!note) {
       throw new AppError(404, "Nota no encontrada")
+    }
+    if (note.boardUsername !== ownerUsername) {
+      throw new AppError(403, "No tienes permiso para modificar esta nota")
     }
 
     Object.assign(note, updates)
@@ -111,11 +114,15 @@ export function createBoardService(deps: {
     }
   }
 
-  const deleteNote = async (noteId: string) => {
-    const deletedNote = await noteRepo.deleteById(noteId)
-    if (!deletedNote) {
+  const deleteNote = async (noteId: string, ownerUsername: string) => {
+    const note = await noteRepo.findById(noteId)
+    if (!note) {
       throw new AppError(404, "Nota no encontrada")
     }
+    if (note.boardUsername !== ownerUsername) {
+      throw new AppError(403, "No tienes permiso para eliminar esta nota")
+    }
+    await noteRepo.deleteById(noteId)
 
     return {
       success: true,

@@ -49,7 +49,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Noty – Mensajes y dibujos anónimos para tus amigos</title>
+        <title>Anoty – Mensajes y dibujos anónimos para tus amigos</title>
         <meta name="description" content="Crea tu muro privado con Google y recibe mensajes y dibujos anónimos de tus amigos. Solo tú puedes verlos." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" />
@@ -162,9 +162,9 @@ export default function Home() {
               <div className="w-6 h-6 rounded-lg bg-teal-600 flex items-center justify-center">
                 <MessageSquareHeart className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-slate-700 font-mono text-sm">Noty</span>
+              <span className="font-bold text-slate-700 font-mono text-sm">Anoty</span>
             </div>
-            <p>© 2026 Noty App. Mensajes y dibujos anónimos y privados.</p>
+            <p>© 2026 Anoty App. Mensajes y dibujos anónimos y privados.</p>
           </div>
         </footer>
       </div>
