@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import '@excalidraw/excalidraw/index.css'
+import { api } from '@/lib/api'
 
 interface ExcalidrawCanvasProps {
   username?: string
@@ -46,7 +47,7 @@ const ExcalidrawCanvas = dynamic(
           const svg = await exportToSvg({
             elements,
             appState: {
-              ...(appState || {}),
+              ...appState,
               exportBackground: false,
               exportPadding: 20,
             },
@@ -56,21 +57,17 @@ const ExcalidrawCanvas = dynamic(
           const width = parseFloat(svg.getAttribute('width') || '') || 400
           const height = parseFloat(svg.getAttribute('height') || '') || 400
 
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-          const response = await fetch(`${apiUrl}/board/send/${username}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          const data = await api.post<{ success: boolean; message?: string }>(
+            `/board/send/${username}`,
+            {
               type: 'drawing',
               content: svg.outerHTML,
               color: '#ffffff',
               authorName: 'Amigo Anónimo',
               width,
               height,
-            }),
-          })
-
-          const data = await response.json()
+            },
+          )
           if (data.success) {
             onSent?.()
           } else {

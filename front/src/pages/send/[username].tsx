@@ -3,20 +3,12 @@ import { useRouter } from "next/router"
 import Head from "next/head"
 import Image from "next/image"
 import Script from "next/script"
-import {
-  MessageSquareHeart,
-  Send,
-  CheckCircle2,
-  ArrowLeft,
-} from "lucide-react"
+import { Send, CheckCircle2, ArrowLeft } from "lucide-react"
 import { motion } from "framer-motion"
+import { api } from "@/lib/api"
 import ExcalidrawCanvas from "@/components/ExcalidrawCanvas"
-
-interface RecipientUser {
-  username: string
-  name: string
-  avatar?: string
-}
+import HeaderShell from "@/components/layout/HeaderShell"
+import type { RecipientUser } from "@/types/auth"
 
 export default function SendNote() {
   const router = useRouter()
@@ -27,13 +19,10 @@ export default function SendNote() {
 
   useEffect(() => {
     if (!username) return
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-    fetch(`${apiUrl}/board/user/${username}`)
-      .then((res) => (res.ok ? res.json() : null))
+    api
+      .get<{ success: boolean; user?: RecipientUser }>(`/board/user/${username}`)
       .then((data) => {
-        if (data?.success) {
-          setRecipient(data.user)
-        }
+        if (data.success && data.user) setRecipient(data.user)
       })
       .catch(() => {})
   }, [username])
@@ -56,21 +45,9 @@ export default function SendNote() {
         {/* Background Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-teal-500/20 via-cyan-500/20 to-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
 
-        {/* Header */}
-        <header className="sticky top-0 z-50 glass-panel border-b border-slate-200 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => router.push("/")}
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/30">
-                <MessageSquareHeart className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
-                Noty<span className="text-cyan-500">.</span>
-              </span>
-            </div>
-
+        <HeaderShell
+          onLogoClick={() => router.push("/")}
+          center={
             <div className="text-center flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center my-auto mx-auto shadow-lg shadow-teal-500/30 overflow-hidden">
                 {recipient?.avatar ? (
@@ -90,11 +67,11 @@ export default function SendNote() {
                 )}
               </div>
               <h1 className="text-2xl font-extrabold text-slate-900 mb-1">
-                Envía una nota a{" "}
-                <span className="gradient-text">@{username}</span>
+                Envía una nota a <span className="gradient-text">@{username}</span>
               </h1>
             </div>
-
+          }
+          right={
             <button
               onClick={() => router.push("/")}
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors"
@@ -102,8 +79,8 @@ export default function SendNote() {
               <ArrowLeft className="w-4 h-4" />
               <span>Volver al inicio</span>
             </button>
-          </div>
-        </header>
+          }
+        />
 
         {/* Content */}
         <main className="w-full mx-auto px-4 py-4 relative z-10">

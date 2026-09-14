@@ -8,3 +8,5 @@ export const normalizeSvgTransform = (svg: string) => {
     return `<svg${clean} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">`
   })
 }
+
+export const svgSafeHtml = (svg: string) => normalizeSvgTransform(sanitizeSvg(svg))

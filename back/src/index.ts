@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes.js"
 import boardRoutes from "./routes/board.routes.js"
 import publicBoardRoutes from "./routes/publicboard.routes.js"
 import { connectDB } from "./lib/db.js"
+import { AppError } from "./lib/error.js"
 
 const app = new Hono()
 
@@ -22,6 +23,15 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization"],
   }),
 )
+
+// Manejo centralizado de errores (reemplaza los try/catch de cada handler)
+app.onError((error, c) => {
+  if (error instanceof AppError) {
+    return c.json({ success: false, message: error.message }, error.status as any)
+  }
+  console.error("❌ Error no controlado:", error)
+  return c.json({ success: false, message: "Error interno del servidor" }, 500)
+})
 
 // Inicializar conexión a la base de datos MongoDB
 connectDB().catch((err) => {
