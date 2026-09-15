@@ -127,7 +127,7 @@ export default function PublicSidebar({
       </aside>
 
       {!open && (
-        <div className="sm:hidden fixed bottom-5 left-5 z-30 flex flex-col items-stretch gap-1">
+        <div className="sm:hidden fixed bottom-2 left-5 z-30 flex flex-col items-stretch gap-1">
           <button
             onClick={onToggle}
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-teal-600 text-white text-xs font-bold shadow-xl shadow-teal-900/20 active:scale-95 transition-transform"

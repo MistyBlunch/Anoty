@@ -45,7 +45,7 @@ export const hintForTool = (tool: "select" | "hand" | "marquee", mode: "inbox" |
     : tool === "marquee"
       ? "Arrastra en el lienzo para seleccionar varios dibujos • Mantén Shift mientras arrastras para sumar • Esc: salir"
       : mode === "public"
-        ? "Arrastra tus dibujos desde el panel izquierdo • Mueve y reordena como quieras • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
+        ? "Arrastra tus dibujos • Mueve y reordena como quieras • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
         : "Arrastra el fondo para moverte • Rueda o pellizco para zoom • Arrastra un dibujo para moverlo • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
 
 export interface LayerReorder {

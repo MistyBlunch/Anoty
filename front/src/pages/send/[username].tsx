@@ -102,8 +102,7 @@ export default function SendNote() {
               </h2>
               <p className="text-slate-600 text-xs sm:text-sm mb-6 leading-relaxed">
                 Tu dibujo fue guardado de forma anónima en el muro privado de{" "}
-                <strong className="text-teal-700">@{username}</strong>. <br />
-                Recuerda que solo esta persona podrá verlo al iniciar sesión.
+                <strong className="text-teal-700">@{username}</strong>.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

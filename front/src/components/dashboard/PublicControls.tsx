@@ -9,7 +9,7 @@ interface PublicControlsProps {
 
 export default function PublicControls({ copied, isPublished, onCopy, onToggle }: PublicControlsProps) {
   return (
-    <div className="absolute flex-col lg:flex-row bottom-25 sm:bottom-2 left-0 sm:left-1/2 sm:-translate-x-1/2 z-30 flex items-start sm:items-center gap-1 px-4 sm:px-0">
+    <div className="absolute flex-col lg:flex-row bottom-22 sm:bottom-2 left-0 sm:left-1/2 sm:-translate-x-1/2 z-30 flex items-start sm:items-center gap-1 px-4 sm:px-0">
       <button
         onClick={onCopy}
         className={`flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-3 sm:px-4 py-2.5 text-xs font-semibold shadow-lg transition-all cursor-pointer ${
