@@ -1,4 +1,5 @@
 import "dotenv/config"
+import { WebSocketServer } from "ws"
 import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
@@ -6,6 +7,7 @@ import { logger } from "hono/logger"
 import authRoutes from "./routes/auth.routes.js"
 import boardRoutes from "./routes/board.routes.js"
 import publicBoardRoutes from "./routes/publicboard.routes.js"
+import { wsRoutes } from "./routes/ws.routes.js"
 import { connectDB } from "./lib/db.js"
 import { AppError } from "./lib/error.js"
 
@@ -56,6 +58,9 @@ app.route("/board", boardRoutes)
 // Rutas de Muros Públicos (/public-boards/:username, /public/:slug)
 app.route("/", publicBoardRoutes)
 
+// WebSocket en tiempo real (/ws)
+app.get("/ws", wsRoutes)
+
 const port = Number(process.env.PORT) || 3000
 
 console.log(`🚀 Server is running on http://localhost:${port}`)
@@ -64,4 +69,7 @@ console.log(`🔑 GOOGLE_CLIENT_ID cargado: ${process.env.GOOGLE_CLIENT_ID ? "S�
 serve({
   fetch: app.fetch,
   port,
+  websocket: {
+    server: new WebSocketServer({ noServer: true }),
+  },
 })

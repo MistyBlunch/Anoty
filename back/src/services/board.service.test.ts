@@ -18,8 +18,8 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
 function makeNoteRepo(overrides: Partial<NoteRepository> = {}): NoteRepository {
   return {
     findByBoard: async () => [],
-    countUnseenDrawings: async () => 0,
     markAllSeen: async () => {},
+    markOneSeen: async () => null,
     create: async (data) => ({ _id: "n1", ...data }) as any,
     findById: async () => null,
     save: async (note) => note,
@@ -28,16 +28,23 @@ function makeNoteRepo(overrides: Partial<NoteRepository> = {}): NoteRepository {
   }
 }
 
-const service = (u: Partial<UserRepository> = {}, n: Partial<NoteRepository> = {}) =>
-  createBoardService({ userRepo: makeUserRepo(u), noteRepo: makeNoteRepo(n) })
+const service = (
+  u: Partial<UserRepository> = {},
+  n: Partial<NoteRepository> = {},
+  notifier: { onNewDrawing?: (username: string) => void } = {},
+) =>
+  createBoardService({
+    userRepo: makeUserRepo(u),
+    noteRepo: makeNoteRepo(n),
+    notifier,
+  })
 
 describe("board.service", () => {
-  it("getMyNotes devuelve notas, total y conteo de no vistas", async () => {
+  it("getMyNotes devuelve notas y total", async () => {
     const svc = service(
       {},
       {
         findByBoard: async () => [{ _id: "a" }, { _id: "b" }] as any,
-        countUnseenDrawings: async () => 1,
       },
     )
 
@@ -45,7 +52,6 @@ describe("board.service", () => {
 
     expect(res.success).toBe(true)
     expect(res.totalNotes).toBe(2)
-    expect(res.unseenDrawingCount).toBe(1)
     expect(res.notes).toHaveLength(2)
   })
 
@@ -114,17 +120,50 @@ describe("board.service", () => {
     })
   })
 
-  it("getUnseenCount devuelve el conteo", async () => {
-    const svc = service({}, { countUnseenDrawings: async () => 3 })
-    const res = await svc.getUnseenCount("emma")
-    expect(res.unseenDrawingCount).toBe(3)
-  })
-
   it("markAllSeen marca todas como vistas", async () => {
     const markAllSeen = vi.fn(async () => {})
     const svc = service({}, { markAllSeen })
     const res = await svc.markAllSeen("emma")
     expect(markAllSeen).toHaveBeenCalledWith("emma")
+    expect(res.success).toBe(true)
+  })
+
+  it("markNoteSeen marca el dibujo y verifica el dueño", async () => {
+    const markOneSeen = vi.fn(async (noteId: string, owner: string) => ({
+      _id: noteId,
+      boardUsername: owner,
+      isSeen: true,
+    }) as any)
+    const svc = service({}, { markOneSeen })
+    const res = await svc.markNoteSeen("n1", "emma")
+    expect(markOneSeen).toHaveBeenCalledWith("n1", "emma")
+    expect(res.success).toBe(true)
+  })
+
+  it("markNoteSeen lanza 404 si la nota no existe o no es del dueño", async () => {
+    const svc = service({}, { markOneSeen: async () => null })
+    await expect(svc.markNoteSeen("x", "emma")).rejects.toMatchObject({
+      status: 404,
+      message: "Nota no encontrada",
+    })
+  })
+
+  it("sendNote notifica al receptor cuando llega un dibujo nuevo", async () => {
+    const onNewDrawing = vi.fn()
+    const svc = service(
+      {},
+      { create: async (data) => ({ _id: "n1", ...data }) as any },
+      { onNewDrawing },
+    )
+
+    await svc.sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
+
+    expect(onNewDrawing).toHaveBeenCalledTimes(1)
+    expect(onNewDrawing).toHaveBeenCalledWith("emma")
+  })
+
+  it("sendNote funciona sin notifier configurado", async () => {
+    const res = await service({}, {}).sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
     expect(res.success).toBe(true)
   })
 })

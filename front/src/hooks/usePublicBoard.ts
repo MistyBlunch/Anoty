@@ -21,6 +21,7 @@ interface UsePublicBoardOutput {
   savingBoard: boolean
   savedFeed: boolean
   pubBoardRef: MutableRefObject<PublicBoardDraft | null>
+  loadPublicBoard: (username: string) => Promise<void>
   saveDraftItems: (items: Drawing[]) => void
   savePublicBoard: () => Promise<void>
   togglePublish: () => void
@@ -28,6 +29,18 @@ interface UsePublicBoardOutput {
 }
 
 const titleFrom = (b?: unknown) => ((b as Record<string, unknown>)?.draftTitle as string) || ((b as Record<string, unknown>)?.title as string) || "Mi Muro Público"
+
+const DRAFT_FLAG_PREFIX = "anoty::draft::"
+
+const isDraftTouched = (boardId: string) =>
+  typeof localStorage !== "undefined" && localStorage.getItem(DRAFT_FLAG_PREFIX + boardId) === "1"
+
+const markDraftTouched = (boardId: string) => {
+  try {
+    localStorage.setItem(DRAFT_FLAG_PREFIX + boardId, "1")
+  } catch {
+  }
+}
 
 export function usePublicBoard({
   user,
@@ -47,6 +60,7 @@ export function usePublicBoard({
   const saveDraftItems = useCallback((items: Drawing[]) => {
     const b = pubBoardRef.current
     if (!b) return
+    markDraftTouched(b._id)
     api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardItems(items) }).catch(() => {})
   }, [])
 
@@ -64,13 +78,18 @@ export function usePublicBoard({
           if (created.success) b = created.board ?? null
         }
         if (b) {
-          const draftSrc = (Array.isArray(b.draftItems) && (b.draftItems as unknown[]).length ? b.draftItems : b.items) as unknown[] | undefined
+          const draftItems = b.draftItems as unknown[] | undefined
+          const hasDraft = Array.isArray(draftItems)
+          const draftTouched = isDraftTouched(b._id as string)
+          const draftSrc =
+            hasDraft && (draftTouched || (draftItems as unknown[]).length > 0) ? draftItems : (b.items as unknown[] | undefined)
           setBoard({
             _id: b._id as string,
             slug: b.slug as string,
             title: (b.title as string) || "Mi Muro Público",
             isPublished: (b.isPublished as boolean) ?? true,
             items: normalizeBoardItems(draftSrc || []),
+            updatedAt: (b.updatedAt as string) || undefined,
           })
           setBoardTitle(titleFrom(b))
         }
@@ -106,7 +125,15 @@ export function usePublicBoard({
         items: serializeBoardItems(getDisplayItems()),
       })
       if (data.success) {
-        setBoard((prev) => (prev ? { ...prev, title } : prev))
+        setBoard((prev) =>
+          prev
+            ? {
+                ...prev,
+                title,
+                updatedAt: ((data.board as Record<string, unknown> | undefined)?.updatedAt as string) || prev.updatedAt,
+              }
+            : prev,
+        )
         setSavedFeed(true)
         setTimeout(() => setSavedFeed(false), 1800)
       }
@@ -139,6 +166,7 @@ export function usePublicBoard({
     savingBoard,
     savedFeed,
     pubBoardRef,
+    loadPublicBoard,
     saveDraftItems,
     savePublicBoard,
     togglePublish,

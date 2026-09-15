@@ -10,7 +10,9 @@ interface NotesCanvasProps {
   zoom: number
   zIndex?: number
   interactive?: boolean
-  selectedId?: string | null
+  handTool?: boolean
+  animated?: boolean
+  selectedIds?: string[]
   pulseId?: string | null
   scaleOf?: (d: Drawing) => number
   onDrawStart?: (e: React.PointerEvent, d: Drawing) => void
@@ -23,7 +25,9 @@ export default function NotesCanvas({
   zoom,
   zIndex,
   interactive = false,
-  selectedId = null,
+  handTool = false,
+  animated = true,
+  selectedIds = [],
   pulseId = null,
   scaleOf,
   onDrawStart,
@@ -39,19 +43,35 @@ export default function NotesCanvas({
       }}
     >
       {interactive ? (
-        <AnimatePresence>
-          {items.map((d) => (
+        animated ? (
+          <AnimatePresence>
+            {items.map((d) => (
+              <NoteCard
+                key={d._id}
+                drawing={d}
+                selected={selectedIds.includes(d._id)}
+                pulsing={pulseId === d._id}
+                scale={scaleOf ? scaleOf(d) : 1}
+                handTool={handTool}
+                onDrawStart={onDrawStart ?? (() => {})}
+                onResizeStart={onResizeStart ?? (() => {})}
+              />
+            ))}
+          </AnimatePresence>
+        ) : (
+          items.map((d) => (
             <NoteCard
               key={d._id}
               drawing={d}
-              selected={d._id === selectedId}
+              selected={selectedIds.includes(d._id)}
               pulsing={pulseId === d._id}
               scale={scaleOf ? scaleOf(d) : 1}
+              handTool={handTool}
               onDrawStart={onDrawStart ?? (() => {})}
               onResizeStart={onResizeStart ?? (() => {})}
             />
-          ))}
-        </AnimatePresence>
+          ))
+        )
       ) : (
         items.map((d) => (
           <div

@@ -1,27 +1,33 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import Head from "next/head"
-import { Inbox, Globe, LogOut, RefreshCw, Copy, Check } from "lucide-react"
-import { sanitizeSvg } from "@/lib/svg"
-import { findVisibleFreeSlot, isTransparent, type Drawing } from "@/lib/board"
+import { RefreshCw, Copy, Check } from "lucide-react"
+import { findVisibleFreeSlot, hintForTool, type Drawing } from "@/lib/board"
+import { downloadSelectionAsPng } from "@/lib/export"
+import { isNewerUpdatedAt } from "@/lib/realtime"
 
 import { useAuth } from "@/hooks/useAuth"
 import { useZoomPan } from "@/hooks/useZoomPan"
 import { useFitToContent } from "@/hooks/useFitToContent"
 import { useClipboard } from "@/hooks/useClipboard"
-import { useResizeObserver } from "@/hooks/useResizeObserver"
 import { useDrawings } from "@/hooks/useDrawings"
-import { useNotifications } from "@/hooks/useNotifications"
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications"
+import { useRealtimeBoard } from "@/hooks/useRealtimeBoard"
 import { usePublicBoard } from "@/hooks/usePublicBoard"
 import { useBoardGesture } from "@/hooks/useBoardGesture"
+import { useUndoRedo } from "@/hooks/useUndoRedo"
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
+import { useSelectionActions } from "@/hooks/useSelectionActions"
+import { useActionsMenuPosition } from "@/hooks/useActionsMenuPosition"
 
 import HeaderShell from "@/components/layout/HeaderShell"
 import HintBar from "@/components/board/HintBar"
 import NotesCanvas from "@/components/board/NotesCanvas"
-import ZoomControls from "@/components/board/ZoomControls"
+import BoardControls from "@/components/board/BoardControls"
 import EmptyBoard from "@/components/board/EmptyBoard"
-import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown"
+import MarqueeOverlay from "@/components/board/MarqueeOverlay"
 import ActionsMenu from "@/components/dashboard/ActionsMenu"
+import HeaderActions from "@/components/dashboard/HeaderActions"
 import PublicSidebar from "@/components/dashboard/PublicSidebar"
 import PublicControls from "@/components/dashboard/PublicControls"
 
@@ -33,12 +39,17 @@ export default function Dashboard() {
   const modeRef = useRef(mode)
   modeRef.current = mode
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const selectedIdsRef = useRef<string[]>(selectedIds)
+  selectedIdsRef.current = selectedIds
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [dragNoteId, setDragNoteId] = useState<string | null>(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [menuDims, setMenuDims] = useState({ w: 0, h: 0 })
   const actionsMenuRef = useRef<HTMLDivElement>(null)
+  const [tool, setTool] = useState<"select" | "hand" | "marquee">("select")
+
+  const undoRedo = useUndoRedo()
+  const { commit } = undoRedo
 
   const view = useZoomPan({ wheel: true })
   const { fitToContent, focusOn } = useFitToContent(view)
@@ -64,6 +75,7 @@ export default function Dashboard() {
     isLoading,
     refresh,
     markAllSeen,
+    markNoteSeen,
     deleteNote,
     persistNote,
     pulseId,
@@ -71,7 +83,7 @@ export default function Dashboard() {
     pulseTimerRef,
   } = useDrawings({ user, fitToContent, findVisibleSlot })
 
-  useNotifications(user, () => refresh(true))
+  useRealtimeNotifications(user, () => refresh(true))
 
   const {
     board,
@@ -82,6 +94,7 @@ export default function Dashboard() {
     savingBoard,
     savedFeed,
     pubBoardRef,
+    loadPublicBoard,
     saveDraftItems,
     savePublicBoard,
     togglePublish,
@@ -92,6 +105,15 @@ export default function Dashboard() {
     fitToContent,
     copy: publicClipboard.copy,
     getDisplayItems: () => displayRef.current,
+  })
+
+  useRealtimeBoard({
+    slug: mode === "public" ? (board?.slug ?? null) : null,
+    onBoardUpdated: (updatedAt) => {
+      const current = pubBoardRef.current?.updatedAt
+      if (isNewerUpdatedAt(current, updatedAt)) loadPublicBoard(user?.username ?? "")
+    },
+    onBoardHidden: () => undefined,
   })
 
   const displayDrawings = mode === "inbox" ? drawings : (board?.items ?? [])
@@ -117,54 +139,92 @@ export default function Dashboard() {
     displayRef,
     pubBoardRef,
     modeRef,
+    getTool: () => tool,
     setDisplayDrawings,
     persistNote,
     saveDraftItems,
-    setSelectedId,
+    getSelectedIds: () => selectedIdsRef.current,
+    setSelectedIds,
+    toggleSelect: (id: string) => {
+      setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+    },
     setConfirmDeleteId,
     setNewArrivals,
     setDragNoteId,
+    commit,
   })
 
-  useResizeObserver(
-    actionsMenuRef,
-    () => {
-      const el = actionsMenuRef.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      setMenuDims((prev) =>
-        prev.w === r.width && prev.h === r.height ? prev : { w: r.width, h: r.height },
-      )
+  const { undo, redo, reset, canUndo, canRedo } = undoRedo
+
+  const handleToolChange = useCallback(
+    (next: "select" | "hand" | "marquee") => {
+      setTool(next)
+      setSelectedIds([])
+      setConfirmDeleteId(null)
     },
-    [selectedId],
+    [setConfirmDeleteId],
   )
+
+  const applySnapshot = useCallback(
+    (items: Drawing[] | null) => {
+      if (!items) return
+      if (modeRef.current === "public") {
+        setBoard((prev) => (prev ? { ...prev, items } : prev))
+        saveDraftItems(items)
+      } else {
+        const existing = new Set(inboxDrawingsRef.current.map((d) => d._id))
+        const restored = items.filter((d) => existing.has(d._id))
+        setDrawings(restored)
+        restored.forEach((d) =>
+          persistNote(d._id, {
+            x: Math.round(d.x),
+            y: Math.round(d.y),
+            width: Math.round(d.width),
+            height: Math.round(d.height),
+            rotation: d.rotation || 0,
+            z: d.z || 0,
+            transparent: d.transparent === true,
+            positionSet: d.positionSet === true,
+          }),
+        )
+      }
+    },
+    [setBoard, setDrawings, saveDraftItems, persistNote],
+  )
+
+  useKeyboardShortcuts({
+    onEscape: () => {
+      setTool("select")
+      setSelectedIds([])
+      setConfirmDeleteId(null)
+    },
+    onToolChange: handleToolChange,
+    onUndo: (shifted) => applySnapshot(shifted ? redo() : undo()),
+    onRedo: () => applySnapshot(redo()),
+  })
+
+  useEffect(() => {
+    setSelectedIds([])
+    setConfirmDeleteId(null)
+    reset(mode === "public" ? (board?.items ?? []) : drawings)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, board?._id])
+
+  useEffect(() => {
+    if (mode === "inbox" && !isLoading && drawings.length > 0) {
+      reset(drawings)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, mode])
 
   const paletteDrawings =
     mode === "public"
       ? drawings.filter((d) => !pubBoardRef.current?.items.some((it) => it._id === d._id))
       : []
 
-  const selectedDrawing = displayDrawings.find((d) => d._id === selectedId) || null
+  const selectedDrawings = displayDrawings.filter((d) => selectedIds.includes(d._id))
 
-  const selectedMenuPos = useMemo(() => {
-    if (!selectedDrawing) return null
-    const board = view.boardRef.current
-    if (!board) return null
-    const rect = board.getBoundingClientRect()
-    const W = rect.width
-    const mw = menuDims.w || 300
-    const mh = menuDims.h || 120
-    const { zoom, pan } = view.viewRef.current
-    const sx = selectedDrawing.x * zoom + pan.x
-    const sy = selectedDrawing.y * zoom + pan.y
-    const cw = selectedDrawing.width * zoom
-    const ch = selectedDrawing.height * zoom
-    const centerX = sx + cw / 2
-    const left = Math.max(mw / 2 + 8, Math.min(W - mw / 2 - 8, centerX))
-    const above = sy - 12 - mh >= 8
-    const top = above ? sy - 12 : sy + ch + 12
-    return { left, top, above }
-  }, [selectedDrawing, menuDims, view])
+  const selectedMenuPos = useActionsMenuPosition(selectedDrawings, actionsMenuRef, view)
 
   const shareUrl = typeof window !== "undefined"
     ? `${window.location.origin}/send/${user?.username}`
@@ -177,16 +237,16 @@ export default function Dashboard() {
   const focusDrawing = useCallback(
     (d: Drawing) => {
       setMode("inbox")
-      markAllSeen()
+      markNoteSeen(d._id)
       if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current)
       setPulseId(d._id)
       pulseTimerRef.current = window.setTimeout(() => setPulseId(null), 3000)
       focusOn(d)
-      setSelectedId(d._id)
+      setSelectedIds([d._id])
       setConfirmDeleteId(null)
       setNotificationsOpen(false)
     },
-    [markAllSeen, focusOn, pulseTimerRef, setPulseId, setSelectedId, setConfirmDeleteId],
+    [markNoteSeen, focusOn, pulseTimerRef, setPulseId, setConfirmDeleteId],
   )
 
   const handleClearNotifications = () => {
@@ -195,131 +255,36 @@ export default function Dashboard() {
     setNotificationsOpen(false)
   }
 
-  const handleDeleteNote = async (d: Drawing) => {
-    const ok = await deleteNote(d._id)
-    if (ok) {
-      setSelectedId(null)
-      setConfirmDeleteId(null)
-    } else {
-      alert("Error al eliminar el dibujo")
-    }
-  }
-
-  const removeFromPublicBoard = useCallback(
-    (d: Drawing) => {
-      const pub = pubBoardRef.current
-      if (!pub) return
-      const next = pub.items.filter((it) => it._id !== d._id)
-      setBoard((prev) => (prev ? { ...prev, items: next } : prev))
-      saveDraftItems(next)
-      setSelectedId(null)
-      setConfirmDeleteId(null)
-    },
-    [pubBoardRef, setBoard, saveDraftItems, setSelectedId, setConfirmDeleteId],
-  )
-
-  const handleExportSvg = (d: Drawing) => {
-    const blob = new Blob([sanitizeSvg(d.content)], { type: "image/svg+xml" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `dibujo-anoty.svg`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleExportPng = (d: Drawing) => {
-    const svg = sanitizeSvg(d.content)
-    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const img = new window.Image()
-    img.onload = () => {
-      const scale = 2
-      const canvas = document.createElement("canvas")
-      canvas.width = d.width * scale
-      canvas.height = d.height * scale
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-      if (!isTransparent(d)) {
-        ctx.fillStyle = "#ffffff"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+  const handleDeleteNote = async () => {
+    for (const d of selectedDrawings) {
+      const ok = await deleteNote(d._id)
+      if (!ok) {
+        alert("Error al eliminar un dibujo")
+        break
       }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      URL.revokeObjectURL(url)
-      const link = document.createElement("a")
-      link.href = canvas.toDataURL("image/png")
-      link.download = `dibujo-anoty.png`
-      link.click()
     }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      alert("No se pudo convertir el dibujo a PNG")
-    }
-    img.src = url
+    setSelectedIds([])
+    setConfirmDeleteId(null)
   }
 
-  const moveLayer = (d: Drawing, dir: "front" | "back") => {
-    const sorted = [...displayDrawings].sort((a, b) => (a.z || 0) - (b.z || 0))
-    const idx = sorted.findIndex((x) => x._id === d._id)
-    if (idx === -1) return
-    const neighbor = sorted[dir === "front" ? idx + 1 : idx - 1]
-    if (!neighbor) return
-
-    let dZ = d.z || 0
-    let nZ = neighbor.z || 0
-    if (nZ === dZ) {
-      dZ = dir === "front" ? nZ + 1 : nZ - 1
-    } else {
-      const tmp = dZ
-      dZ = nZ
-      nZ = tmp
-    }
-
-    setDisplayDrawings((prev) =>
-      prev.map((x) => {
-        if (x._id === d._id) return { ...x, z: dZ }
-        if (x._id === neighbor._id) return { ...x, z: nZ }
-        return x
-      }),
-    )
-
-    if (mode === "public") {
-      const b = pubBoardRef.current
-      if (b) {
-        saveDraftItems(
-          b.items.map((x) => {
-            if (x._id === d._id) return { ...x, z: dZ }
-            if (x._id === neighbor._id) return { ...x, z: nZ }
-            return x
-          }),
-        )
-      }
-      return
-    }
-
-    persistNote(d._id, { z: dZ })
-    persistNote(neighbor._id, { z: nZ })
-  }
-
-  const toggleDrawingBackground = (d: Drawing) => {
-    const next = !isTransparent(d)
-    setDisplayDrawings((prev) =>
-      prev.map((x) => (x._id === d._id ? { ...x, transparent: next } : x)),
-    )
-    if (mode === "public") {
-      const b = pubBoardRef.current
-      if (b) saveDraftItems(b.items.map((x) => (x._id === d._id ? { ...x, transparent: next } : x)))
-      return
-    }
-    persistNote(d._id, { transparent: next })
-  }
+  const { moveLayer, toggleDrawingBackground, removeFromPublicBoard } = useSelectionActions({
+    selectedIds,
+    selectedDrawings,
+    displayDrawings,
+    mode,
+    setDisplayDrawings,
+    setPublicItems: (items) => setBoard((prev) => (prev ? { ...prev, items } : prev)),
+    publicItems: pubBoardRef.current?.items ?? null,
+    saveDraftItems,
+    persistNote,
+    commit,
+    setSelectedIds,
+    setConfirmDeleteId,
+  })
 
   if (!user) return null
 
-  const hintText =
-    mode === "public"
-      ? "Arrastra tus dibujos desde el panel izquierdo • Mueve y reordena como quieras"
-      : "Mantén y arrastra el fondo para moverte • Rueda para zoom • Arrastra un dibujo para moverlo"
+  const hintText = hintForTool(tool, mode)
 
   if (!isReady) {
     return (
@@ -347,55 +312,24 @@ export default function Dashboard() {
         <HeaderShell
           onLogoClick={() => router.push("/")}
           right={
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 p-1 rounded-xl">
-                <button
-                  onClick={() => {
-                    setMode("inbox")
-                    fitToContent(drawings)
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    mode === "inbox"
-                      ? "bg-white text-teal-700 shadow-sm border border-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <Inbox className="w-4 h-4" />
-                  Mis anotys
-                </button>
-                <button
-                  onClick={() => setMode("public")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    mode === "public"
-                      ? "bg-white text-teal-700 shadow-sm border border-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <Globe className="w-4 h-4" />
-                  Muro público
-                </button>
-              </div>
-
-              <NotificationsDropdown
-                user={user}
-                newArrivals={newArrivals}
-                open={notificationsOpen}
-                onToggle={() => {
-                  setMode("inbox")
-                  setNotificationsOpen((o) => !o)
-                }}
-                onFocus={focusDrawing}
-                onClear={handleClearNotifications}
-              />
-
-              <button
-                onClick={logout}
-                className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+            <HeaderActions
+              user={user}
+              mode={mode}
+              onInbox={() => {
+                setMode("inbox")
+                fitToContent(drawings)
+              }}
+              onPublic={() => setMode("public")}
+              newArrivals={newArrivals}
+              notificationsOpen={notificationsOpen}
+              onToggleNotifications={() => {
+                setMode("inbox")
+                setNotificationsOpen((o) => !o)
+              }}
+              onFocusDrawing={focusDrawing}
+              onClearNotifications={handleClearNotifications}
+              onLogout={logout}
+            />
           }
         />
 
@@ -422,25 +356,33 @@ export default function Dashboard() {
             />
           )}
 
-          {selectedDrawing && selectedMenuPos && (
+          {selectedDrawings.length > 0 && selectedMenuPos && (
             <ActionsMenu
               innerRef={actionsMenuRef}
-              drawing={selectedDrawing}
+              drawings={selectedDrawings}
               mode={mode}
-              confirmDeleteVisible={confirmDeleteId === selectedDrawing._id}
+              confirmDeleteVisible={confirmDeleteId !== null}
               pos={selectedMenuPos}
-              onExportSvg={handleExportSvg}
-              onExportPng={handleExportPng}
+              onExportPng={() => downloadSelectionAsPng(selectedDrawings)}
               onToggleBackground={toggleDrawingBackground}
               onMoveLayer={moveLayer}
-              onRequestDelete={(d) => setConfirmDeleteId(d._id)}
+              onRequestDelete={() => setConfirmDeleteId(selectedIds[0] ?? null)}
               onConfirmDelete={handleDeleteNote}
               onCancelDelete={() => setConfirmDeleteId(null)}
               onRemovePublic={removeFromPublicBoard}
             />
           )}
 
-          <ZoomControls zoom={view.zoom} onZoom={view.handleZoom} />
+          <BoardControls
+            tool={tool}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            zoom={view.zoom}
+            onToolChange={handleToolChange}
+            onUndo={() => applySnapshot(undo())}
+            onRedo={() => applySnapshot(redo())}
+            onZoom={view.handleZoom}
+          />
 
           {(isLoading || (mode === "public" && boardLoading)) && (
             <div className="absolute inset-0 z-20 flex items-center justify-center">
@@ -455,22 +397,27 @@ export default function Dashboard() {
 
           <div
             ref={view.boardRef}
-            onPointerDown={gesture.handlePanStart}
+            onPointerDown={tool === "marquee" ? gesture.handleMarqueeStart : gesture.handlePanStart}
             onDragOver={(e) => e.preventDefault()}
             onDrop={mode === "public" ? gesture.handleDrop : undefined}
-            className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing bg-slate-50"
+            className={`absolute inset-0 overflow-hidden bg-slate-50 ${
+              tool === "marquee" ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"
+            }`}
             style={{
               backgroundImage: "radial-gradient(circle, rgba(148,163,184,0.35) 1px, transparent 1px)",
               backgroundSize: "24px 24px",
             }}
           >
+            {gesture.marqueeRect && !dragNoteId && <MarqueeOverlay rect={gesture.marqueeRect} />}
             <NotesCanvas
               items={displayDrawings}
               pan={view.pan}
               zoom={view.zoom}
               zIndex={gesture.sidebarHover ? 30 : 0}
               interactive
-              selectedId={selectedId}
+              handTool={tool === "hand"}
+              animated={mode === "inbox"}
+              selectedIds={selectedIds}
               pulseId={pulseId}
               scaleOf={gesture.dragScale}
               onDrawStart={gesture.handleDrawStart}

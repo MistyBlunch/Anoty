@@ -20,6 +20,7 @@ export interface PublicBoardDraft {
   title: string
   isPublished: boolean
   items: Drawing[]
+  updatedAt?: string
 }
 
 export interface PublicBoardDto {

@@ -25,11 +25,16 @@ const mapItems = (items: PublicBoardItemInput[]) =>
     transparent: item.transparent ?? false,
   }))
 
+export type PublicBoardNotifier = {
+  onBoardChange?: (board: IPublicBoard) => void
+}
+
 export function createPublicBoardService(deps: {
   boardRepo: PublicBoardRepository
   userRepo: UserRepository
+  notifier?: PublicBoardNotifier
 }) {
-  const { boardRepo, userRepo } = deps
+  const { boardRepo, userRepo, notifier } = deps
 
   const ensureSlug = async (board: IPublicBoard, username: string) => {
     if (board.slug !== username) {
@@ -82,6 +87,11 @@ export function createPublicBoardService(deps: {
       throw new AppError(404, "Board público no encontrado")
     }
 
+    const publishedFieldsChanged =
+      typeof updates.title === "string" ||
+      typeof updates.isPublished === "boolean" ||
+      Array.isArray(updates.items)
+
     if (typeof updates.title === "string") board.title = updates.title
     if (typeof updates.draftTitle === "string") board.draftTitle = updates.draftTitle
     if (typeof updates.isPublished === "boolean") board.isPublished = updates.isPublished
@@ -92,6 +102,10 @@ export function createPublicBoardService(deps: {
       board.draftItems = mapItems(updates.draftItems)
     }
     await boardRepo.save(board)
+
+    if (publishedFieldsChanged) {
+      notifier?.onBoardChange?.(board)
+    }
 
     return { success: true, board }
   }
@@ -113,6 +127,8 @@ export function createPublicBoardService(deps: {
     return {
       success: true,
       title: board.title,
+      slug: board.slug,
+      updatedAt: board.updatedAt,
       items: board.items,
     }
   }

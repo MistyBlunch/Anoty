@@ -1,5 +1,8 @@
 export const sanitizeSvg = (svg: string) =>
-  svg.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/on\w+\s*=\s*["'][\s\S]*?["']/gi, "")
+  svg
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<script\b[^>]*>/gi, "")
+    .replace(/on\w+\s*=\s*["'][\s\S]*?["']/gi, "")
 
 export const normalizeSvgTransform = (svg: string) => {
   if (!/^<svg/i.test(svg)) return svg

@@ -17,6 +17,7 @@ interface UseDrawingsOutput {
   isLoading: boolean
   refresh: (silent?: boolean) => Promise<void>
   markAllSeen: () => Promise<void>
+  markNoteSeen: (id: string) => Promise<void>
   deleteNote: (id: string) => Promise<boolean>
   persistNote: (id: string, patch: Record<string, unknown>) => void
   pulseId: string | null
@@ -130,6 +131,11 @@ export function useDrawings({ user, fitToContent, findVisibleSlot }: UseDrawings
     await api.post(`/board/my-notes/${user.username}/seen`).catch(() => {})
   }, [user])
 
+  const markNoteSeen = useCallback(async (id: string) => {
+    await api.post(`/board/notes/${id}/seen`).catch(() => {})
+    setNewArrivals((prev) => prev.filter((d) => d._id !== id))
+  }, [])
+
   const deleteNote = useCallback(async (id: string) => {
     try {
       const data = await api.delete(`/board/notes/${id}`)
@@ -156,6 +162,7 @@ export function useDrawings({ user, fitToContent, findVisibleSlot }: UseDrawings
     isLoading,
     refresh,
     markAllSeen,
+    markNoteSeen,
     deleteNote,
     persistNote,
     pulseId,

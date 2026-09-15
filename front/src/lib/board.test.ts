@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   MIN_ZOOM,
   MAX_ZOOM,
+  clamp,
   fitNoteSize,
   isTransparent,
   rectsCollide,
@@ -13,6 +14,9 @@ import {
   normalizeBoardItems,
   normalizeNotes,
   findVisibleFreeSlot,
+  hintForTool,
+  reorderLayers,
+  applyTransparency,
   type Drawing,
 } from "@/lib/board"
 
@@ -52,6 +56,117 @@ describe("isTransparent", () => {
     expect(isTransparent({ transparent: false })).toBe(false)
     expect(isTransparent({ transparent: null })).toBe(false)
     expect(isTransparent({})).toBe(false)
+  })
+})
+
+describe("clamp", () => {
+  it("keeps values within bounds", () => {
+    expect(clamp(5, 0, 10)).toBe(5)
+  })
+
+  it("clamps below the minimum", () => {
+    expect(clamp(-3, 0, 10)).toBe(0)
+  })
+
+  it("clamps above the maximum", () => {
+    expect(clamp(25, 0, 10)).toBe(10)
+  })
+})
+
+describe("hintForTool", () => {
+  it("shows the hand hint regardless of mode", () => {
+    expect(hintForTool("hand", "inbox")).toContain("Modo mano")
+    expect(hintForTool("hand", "public")).toContain("Modo mano")
+  })
+
+  it("shows the marquee hint mentioning Shift", () => {
+    expect(hintForTool("marquee", "inbox")).toContain("Shift")
+    expect(hintForTool("marquee", "public")).toContain("varios dibujos")
+  })
+
+  it("mentions the sidebar in public select mode", () => {
+    expect(hintForTool("select", "public")).toContain("panel izquierdo")
+  })
+
+  it("shows move/zoom hints in inbox select mode", () => {
+    const hint = hintForTool("select", "inbox")
+    expect(hint).toContain("Arrastra el fondo")
+    expect(hint).toContain("M: selección múltiple")
+  })
+})
+
+describe("reorderLayers", () => {
+  const zed = (id: string, z: number): Drawing => draw({ _id: id, z })
+
+  it("sends the selection to the back (reassigns z while keeping array order)", () => {
+    const items = [zed("a", 1), zed("b", 2), zed("c", 3)]
+    const { next, changed } = reorderLayers(items, ["b", "c"], "back")
+    const zById = Object.fromEntries(next.map((d) => [d._id, d.z]))
+    // b and c go to the bottom; a ends on top
+    expect(zById).toEqual({ a: 2, b: 0, c: 1 })
+    expect([...changed.entries()]).toEqual([
+      ["b", 0],
+      ["c", 1],
+      ["a", 2],
+    ])
+  })
+
+  it("sends the selection to the front", () => {
+    const items = [zed("a", 0), zed("b", 1), zed("c", 2)]
+    const { next } = reorderLayers(items, ["a", "c"], "front")
+    const zById = Object.fromEntries(next.map((d) => [d._id, d.z]))
+    expect(zById).toEqual({ a: 1, b: 0, c: 2 })
+  })
+
+  it("keeps the internal z order of the selected group", () => {
+    const items = [zed("a", 0), zed("b", 1), zed("c", 2), zed("d", 3)]
+    const { next } = reorderLayers(items, ["c", "a"], "back")
+    const zById = Object.fromEntries(next.map((d) => [d._id, d.z]))
+    // group keeps a (z0) below c (z1), then the others on top
+    expect(zById).toEqual({ a: 0, c: 1, b: 2, d: 3 })
+  })
+
+  it("reports no changes when the order already matches", () => {
+    const items = [zed("a", 0), zed("b", 1)]
+    const { next, changed } = reorderLayers(items, ["a"], "back")
+    expect(changed.size).toBe(0)
+    expect(next).toBe(items)
+  })
+
+  it("does nothing when nothing is selected", () => {
+    const items = [zed("a", 0), zed("b", 1)]
+    const { next, changed } = reorderLayers(items, [], "front")
+    expect(changed.size).toBe(0)
+    expect(next).toBe(items)
+  })
+
+  it("renormalizes z across the whole list", () => {
+    const items = [zed("a", 10), zed("b", 20), zed("c", 30)]
+    const { next } = reorderLayers(items, ["a"], "front")
+    const zById = Object.fromEntries(next.map((d) => [d._id, d.z]))
+    expect(zById).toEqual({ b: 0, c: 1, a: 2 })
+  })
+})
+
+describe("applyTransparency", () => {
+  it("toggles only the selected drawings", () => {
+    const items = [draw({ _id: "a", transparent: true }), draw({ _id: "b", transparent: false })]
+    const next = applyTransparency(items, ["a", "b"], true)
+    expect(next[0].transparent).toBe(true)
+    expect(next[1].transparent).toBe(true)
+  })
+
+  it("leaves unselected drawings untouched", () => {
+    const items = [draw({ _id: "a", transparent: false }), draw({ _id: "b", transparent: false })]
+    const next = applyTransparency(items, ["a"], true)
+    expect(next[0].transparent).toBe(true)
+    expect(next[1].transparent).toBe(false)
+  })
+
+  it("does not mutate the input array", () => {
+    const items = [draw({ _id: "a", transparent: false })]
+    applyTransparency(items, ["a"], true)
+    expect(items[0].transparent).toBe(false)
   })
 })
 

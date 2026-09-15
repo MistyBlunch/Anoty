@@ -33,6 +33,60 @@ export const clamp = (v: number, min: number, max: number) => Math.min(max, Math
 
 export const isTransparent = (d: { transparent?: boolean | null }) => d.transparent === true
 
+export interface MenuPosition {
+  left: number
+  top: number
+  above: boolean
+}
+
+export const hintForTool = (tool: "select" | "hand" | "marquee", mode: "inbox" | "public") =>
+  tool === "hand"
+    ? "Modo mano — arrastra para mover el lienzo • Rueda para zoom • V: seleccionar • Ctrl+Z: deshacer"
+    : tool === "marquee"
+      ? "Arrastra en el lienzo para seleccionar varios dibujos • Mantén Shift mientras arrastras para sumar • Esc: salir"
+      : mode === "public"
+        ? "Arrastra tus dibujos desde el panel izquierdo • Mueve y reordena como quieras • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
+        : "Arrastra el fondo para moverte • Rueda para zoom • Arrastra un dibujo para moverlo • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
+
+export interface LayerReorder {
+  next: Drawing[]
+  changed: Map<string, number>
+}
+
+export function reorderLayers(
+  items: Drawing[],
+  selectedIds: string[],
+  dir: "front" | "back",
+): LayerReorder {
+  const ids = new Set(selectedIds)
+  const ordered = [...items]
+    .map((d, index) => ({ d, index }))
+    .sort((a, b) => (a.d.z || 0) - (b.d.z || 0) || a.index - b.index)
+  const sel = ordered.filter(({ d }) => ids.has(d._id))
+  const others = ordered.filter(({ d }) => !ids.has(d._id))
+  if (sel.length === 0) return { next: items, changed: new Map<string, number>() }
+  const final = dir === "back" ? [...sel, ...others] : [...others, ...sel]
+  const changed = new Map<string, number>()
+  final.forEach(({ d }, i) => {
+    if ((d.z || 0) !== i) changed.set(d._id, i)
+  })
+  if (changed.size === 0) return { next: items, changed }
+  const next = items.map((d) => {
+    const z = changed.get(d._id)
+    return z !== undefined ? { ...d, z } : d
+  })
+  return { next, changed }
+}
+
+export const applyTransparency = (
+  items: Drawing[],
+  selectedIds: string[],
+  target: boolean,
+): Drawing[] => {
+  const ids = new Set(selectedIds)
+  return items.map((d) => (ids.has(d._id) ? { ...d, transparent: target } : d))
+}
+
 export const fitNoteSize = (w?: number | string | null, h?: number | string | null) => {
   const maxW = 520
   const maxH = 420

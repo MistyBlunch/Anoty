@@ -7,6 +7,7 @@ interface NoteCardProps {
   selected: boolean
   pulsing: boolean
   scale: number
+  handTool?: boolean
   onDrawStart: (e: React.PointerEvent, d: Drawing) => void
   onResizeStart: (e: React.PointerEvent, d: Drawing) => void
 }
@@ -16,6 +17,7 @@ export default function NoteCard({
   selected,
   pulsing,
   scale,
+  handTool = false,
   onDrawStart,
   onResizeStart,
 }: NoteCardProps) {
@@ -25,7 +27,7 @@ export default function NoteCard({
       animate={{ opacity: 1, scale }}
       exit={{ opacity: 0, scale: 0.5 }}
       transition={{ type: "spring", stiffness: 200, damping: 25 }}
-      className="absolute cursor-move"
+      className={`absolute ${handTool ? "cursor-grab" : "cursor-move"}`}
       style={{
         left: drawing.x,
         top: drawing.y,
@@ -34,10 +36,13 @@ export default function NoteCard({
         touchAction: "none",
         zIndex: drawing.z || 0,
       }}
-      onPointerDown={(e) => onDrawStart(e, drawing)}
+      onPointerDown={(e) => {
+        if (handTool) return
+        onDrawStart(e, drawing)
+      }}
     >
       <BoardNote drawing={drawing} selected={selected} pulsing={pulsing} />
-      {selected && (
+      {!handTool && selected && (
         <div
           onPointerDown={(e) => onResizeStart(e, drawing)}
           className="absolute -bottom-2 -right-2 z-10 w-5 h-5 bg-white border-2 border-teal-500 rounded-md shadow flex items-center justify-center cursor-nwse-resize"

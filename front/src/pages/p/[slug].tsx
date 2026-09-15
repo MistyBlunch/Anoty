@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import Head from "next/head"
 import { MessageSquareHeart, Home, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
+import { isNewerUpdatedAt } from "@/lib/realtime"
 import type { Drawing } from "@/types/drawing"
 
 import { useZoomPan } from "@/hooks/useZoomPan"
 import { useFitToContent } from "@/hooks/useFitToContent"
+import { useRealtimeBoard } from "@/hooks/useRealtimeBoard"
 
 import HeaderShell from "@/components/layout/HeaderShell"
 import NotesCanvas from "@/components/board/NotesCanvas"
@@ -34,19 +36,21 @@ export default function PublicBoardView() {
   const { fitToContent } = useFitToContent(view)
 
   const dragRef = useRef<BoardDrag | null>(null)
+  const updatedAtRef = useRef<string | null>(null)
 
-  useEffect(() => {
-    if (!slug) return
+  const loadBoard = useCallback((currentSlug: string) => {
     setStatus("loading")
     api
-      .get(`/public/${slug.toLowerCase()}`)
+      .get(`/public/${currentSlug.toLowerCase()}`)
       .then((data) => {
         if (!data.success) {
           setStatus("notfound")
           return
         }
-        const rawItems = (data as unknown as Record<string, unknown>).items as unknown[] | undefined
-        setTitle(((data as unknown as Record<string, unknown>).title as string) || "Muro Público")
+        const payload = data as unknown as Record<string, unknown>
+        const rawItems = payload.items as unknown[] | undefined
+        updatedAtRef.current = (payload.updatedAt as string) || null
+        setTitle((payload.title as string) || "Muro Público")
         setItems(
           (rawItems || []).map((raw) => {
             const it = raw as Record<string, unknown>
@@ -68,7 +72,23 @@ export default function PublicBoardView() {
         setStatus("ready")
       })
       .catch(() => setStatus("notfound"))
-  }, [slug])
+  }, [])
+
+  useEffect(() => {
+    if (!slug) return
+    setStatus("loading")
+    loadBoard(slug)
+  }, [slug, loadBoard])
+
+  useRealtimeBoard({
+    slug: slug || null,
+    onBoardUpdated: (updatedAt) => {
+      if (isNewerUpdatedAt(updatedAtRef.current, updatedAt) && slug) {
+        loadBoard(slug)
+      }
+    },
+    onBoardHidden: () => setStatus("notfound"),
+  })
 
   useEffect(() => {
     if (status !== "ready" || items.length === 0) return

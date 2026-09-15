@@ -5,11 +5,16 @@ import { AppError } from "../lib/error.js"
 
 export type BoardService = ReturnType<typeof createBoardService>
 
+export type Notifier = {
+  onNewDrawing?: (username: string) => void
+}
+
 export function createBoardService(deps: {
   userRepo: UserRepository
   noteRepo: NoteRepository
+  notifier?: Notifier
 }) {
-  const { userRepo, noteRepo } = deps
+  const { userRepo, noteRepo, notifier } = deps
 
   const getRecipientInfo = async (username: string) => {
     const user = await userRepo.findByUsername(username)
@@ -33,29 +38,12 @@ export function createBoardService(deps: {
     }
 
     const notes = await noteRepo.findByBoard(username)
-    const unseenDrawingCount = await noteRepo.countUnseenDrawings(username)
 
     return {
       success: true,
       username,
       totalNotes: notes.length,
-      unseenDrawingCount,
       notes,
-    }
-  }
-
-  const getUnseenCount = async (username: string) => {
-    const userExists = await userRepo.existsByUsername(username)
-    if (!userExists) {
-      throw new AppError(404, "Usuario no encontrado")
-    }
-
-    const unseenDrawingCount = await noteRepo.countUnseenDrawings(username)
-
-    return {
-      success: true,
-      username,
-      unseenDrawingCount,
     }
   }
 
@@ -73,6 +61,18 @@ export function createBoardService(deps: {
     }
   }
 
+  const markNoteSeen = async (noteId: string, ownerUsername: string) => {
+    const note = await noteRepo.markOneSeen(noteId, ownerUsername)
+    if (!note) {
+      throw new AppError(404, "Nota no encontrada")
+    }
+
+    return {
+      success: true,
+      message: "Dibujo marcado como visto",
+    }
+  }
+
   const sendNote = async (username: string, data: CreateNoteInput) => {
     const user = await userRepo.findByUsername(username)
     if (!user) {
@@ -83,6 +83,8 @@ export function createBoardService(deps: {
       boardUsername: username,
       ...data,
     })
+
+    notifier?.onNewDrawing?.(username)
 
     return {
       success: true,
@@ -130,5 +132,5 @@ export function createBoardService(deps: {
     }
   }
 
-  return { getRecipientInfo, getMyNotes, getUnseenCount, markAllSeen, sendNote, updateNote, deleteNote }
+  return { getRecipientInfo, getMyNotes, markAllSeen, markNoteSeen, sendNote, updateNote, deleteNote }
 }

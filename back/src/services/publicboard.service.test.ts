@@ -26,8 +26,16 @@ function makeBoardRepo(overrides: Partial<PublicBoardRepository> = {}): PublicBo
   }
 }
 
-const service = (u: Partial<UserRepository> = {}, b: Partial<PublicBoardRepository> = {}) =>
-  createPublicBoardService({ userRepo: makeUserRepo(u), boardRepo: makeBoardRepo(b) })
+const service = (
+  u: Partial<UserRepository> = {},
+  b: Partial<PublicBoardRepository> = {},
+  n: { onBoardChange?: (board: any) => void } = {},
+) =>
+  createPublicBoardService({
+    userRepo: makeUserRepo(u),
+    boardRepo: makeBoardRepo(b),
+    notifier: n,
+  })
 
 describe("publicboard.service", () => {
   it("getOrCreate devuelve el board existente y migra slug a username (legacy)", async () => {
@@ -104,15 +112,19 @@ describe("publicboard.service", () => {
     })
   })
 
-  it("getPublicBySlug devuelve solo title/items cuando está publicado", async () => {
-    const svc = service(
-      {},
-      { findBySlugOrLegacy: async () => ({ _id: "b1", title: "T", items: [{ noteId: "n1" }], isPublished: true }) as any },
-    )
+  it("getPublicBySlug devuelve title/items/slug/updatedAt cuando está publicado", async () => {
+    const updatedAt = new Date("2026-01-01T00:00:00Z")
+    const board: any = {
+      _id: "b1",
+      title: "T",
+      slug: "emma",
+      items: [{ noteId: "n1" }],
+      isPublished: true,
+      updatedAt,
+    }
+    const res = await service({}, { findBySlugOrLegacy: async () => board }).getPublicBySlug("emma")
 
-    const res = await svc.getPublicBySlug("emma")
-
-    expect(res).toEqual({ success: true, title: "T", items: [{ noteId: "n1" }] })
+    expect(res).toEqual({ success: true, title: "T", slug: "emma", updatedAt, items: [{ noteId: "n1" }] })
   })
 
   it("getPublicBySlug resuelve slugs legacy", async () => {
@@ -142,5 +154,45 @@ describe("publicboard.service", () => {
     await expect(service({}, { deleteById: async () => null }).deleteBoard("x")).rejects.toMatchObject({
       status: 404,
     })
+  })
+
+  it("updateBoard notifica cuando cambian campos publicados (items)", async () => {
+    const board: any = { _id: "b1", slug: "emma", title: "T", isPublished: true, items: [], updatedAt: new Date() }
+    const onBoardChange = vi.fn()
+    const svc = service(
+      {},
+      { findById: async () => board },
+      { onBoardChange },
+    )
+
+    await svc.updateBoard("b1", {
+      items: [{ noteId: "n1", content: "<svg/>", x: 0, y: 0, width: 100, height: 80 }],
+    })
+
+    expect(onBoardChange).toHaveBeenCalledTimes(1)
+    expect(onBoardChange).toHaveBeenCalledWith(board)
+  })
+
+  it("updateBoard notifica cuando cambia isPublished", async () => {
+    const board: any = { _id: "b1", slug: "emma", title: "T", isPublished: true, items: [] }
+    const onBoardChange = vi.fn()
+    const svc = service({}, { findById: async () => board }, { onBoardChange })
+
+    await svc.updateBoard("b1", { isPublished: false })
+
+    expect(onBoardChange).toHaveBeenCalledWith(board)
+  })
+
+  it("updateBoard no notifica por cambios de solo borrador", async () => {
+    const board: any = { _id: "b1", slug: "emma", title: "T", isPublished: true, items: [], draftItems: [] }
+    const onBoardChange = vi.fn()
+    const svc = service({}, { findById: async () => board }, { onBoardChange })
+
+    await svc.updateBoard("b1", {
+      draftTitle: "Borrador",
+      draftItems: [{ noteId: "n1", content: "<svg/>", x: 0, y: 0, width: 100, height: 80 }],
+    })
+
+    expect(onBoardChange).not.toHaveBeenCalled()
   })
 })
