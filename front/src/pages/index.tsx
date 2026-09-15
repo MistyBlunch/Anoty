@@ -23,6 +23,7 @@ export default function Home() {
   const { user, saveSession, logout } = useAuth({ redirect: false })
 
   const loginWithGoogle = useGoogleLogin({
+    scope: "openid email profile",
     onSuccess: async (tokenResponse) => {
       setIsLoggingIn(true)
       try {
