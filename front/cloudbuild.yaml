@@ -2,6 +2,8 @@ substitutions:
   _REGION: 'europe-west1'
   _SERVICE: 'anoty-frontend'
   _IMAGE: 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE:latest'
+  _NEXT_PUBLIC_API_URL: 'https://anoty-backend-99268078370.europe-west1.run.app'
+  _NEXT_PUBLIC_GOOGLE_CLIENT_ID: '99268078370-ihertmmhv5suvrleahvdpl0b1jphgsqp.apps.googleusercontent.com'
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
