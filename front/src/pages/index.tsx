@@ -55,7 +55,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.svg" />
       </Head>
 
-      <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white relative overflow-hidden">
+      <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white relative overflow-hidden flex flex-col">
         {/* Background Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-teal-500/20 via-cyan-500/20 to-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
         <div className="absolute top-[600px] right-0 w-[500px] h-[500px] bg-teal-900/10 blur-[150px] pointer-events-none rounded-full" />
@@ -64,13 +64,13 @@ export default function Home() {
           onLogoClick={() => router.push("/")}
           right={
             user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => router.push("/dashboard")}
-                  className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
+                  className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-3 sm:px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Mi Muro Privado</span>
+                  <span className="hidden sm:inline">Mi Muro Privado</span>
                 </button>
                 <button
                   onClick={logout}
@@ -84,7 +84,7 @@ export default function Home() {
               <button
                 onClick={() => loginWithGoogle()}
                 disabled={isLoggingIn}
-                className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-teal-500/50 cursor-pointer active:scale-95"
+                className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-teal-500/50 cursor-pointer active:scale-95"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
@@ -92,14 +92,15 @@ export default function Home() {
                   <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
                   <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
                 </svg>
-                <span>{isLoggingIn ? "Conectando..." : "Ingresar con Google"}</span>
+                <span className="hidden sm:inline">Ingresar con Google</span>
+                <span className="sm:hidden">{isLoggingIn ? "..." : "Ingresar"}</span>
               </button>
             )
           }
         />
 
         {/* Hero Section */}
-        <section className="pt-20 pb-16 px-6 max-w-5xl mx-auto text-center relative z-10">
+        <section className="flex-1 pt-16 pb-14 px-6 max-w-5xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -156,7 +157,7 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500 absolute z-10 glass-panel w-full bottom-0">
+        <footer className="border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500 relative z-10 glass-panel w-full mt-auto">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-teal-600 flex items-center justify-center">

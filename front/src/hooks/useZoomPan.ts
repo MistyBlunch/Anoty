@@ -53,6 +53,51 @@ export function useZoomPan({ wheel = true, initialZoom = 0.8 }: UseZoomPanOption
     return () => board.removeEventListener("wheel", onWheel)
   }, [wheel, zoom, pan])
 
+  useEffect(() => {
+    if (!wheel) return
+    const pointers = new Map<number, { x: number; y: number }>()
+    let lastDist = 0
+
+    const onPointerDown = (e: PointerEvent) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+    const onPointerMove = (e: PointerEvent) => {
+      if (!pointers.has(e.pointerId)) return
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (pointers.size >= 2) {
+        const pts = Array.from(pointers.values())
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+        if (lastDist > 0) {
+          const board = boardRef.current
+          if (!board) return
+          const rect = board.getBoundingClientRect()
+          const mx = (pts[0].x + pts[1].x) / 2 - rect.left
+          const my = (pts[0].y + pts[1].y) / 2 - rect.top
+          const factor = dist / lastDist
+          const cur = viewRef.current
+          const next = zoomTowardPoint(cur.pan, cur.zoom, factor, mx, my)
+          setZoom(next.zoom)
+          setPan(next.pan)
+        }
+        lastDist = dist
+      }
+    }
+    const onPointerUp = (e: PointerEvent) => {
+      pointers.delete(e.pointerId)
+      if (pointers.size < 2) lastDist = 0
+    }
+    window.addEventListener("pointerdown", onPointerDown)
+    window.addEventListener("pointermove", onPointerMove)
+    window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("pointercancel", onPointerUp)
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown)
+      window.removeEventListener("pointermove", onPointerMove)
+      window.removeEventListener("pointerup", onPointerUp)
+      window.removeEventListener("pointercancel", onPointerUp)
+    }
+  }, [wheel])
+
   return {
     zoom,
     pan,

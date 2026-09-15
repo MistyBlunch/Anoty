@@ -22,7 +22,7 @@ export default function BoardControls({
   onZoom,
 }: BoardControlsProps) {
   return (
-    <div className="absolute bottom-5 right-5 z-30 flex flex-col gap-1.5 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-lg">
+    <div className="absolute bottom-2 right-5 z-30 flex flex-col gap-1.5 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-lg">
       <button
         onClick={() => onToolChange("select")}
         className={`p-2 rounded-xl transition-colors cursor-pointer ${

@@ -196,7 +196,7 @@ export default function PublicBoardView() {
           <div
             ref={view.boardRef}
             onPointerDown={handlePanStart}
-            className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing bg-slate-50"
+            className="absolute inset-0 overflow-hidden touch-none overscroll-none cursor-grab active:cursor-grabbing bg-slate-50"
             style={{
               backgroundImage: "radial-gradient(circle, rgba(148,163,184,0.35) 1px, transparent 1px)",
               backgroundSize: "24px 24px",
@@ -207,7 +207,7 @@ export default function PublicBoardView() {
 
           {items.length === 0 && <EmptyBoard variant="viewer" />}
 
-          <HintBar text="Mantén y arrastra para moverte • Rueda para zoom" />
+          <HintBar text="Mantén y arrastra para moverte • Zoom con rueda o pellizco" />
 
           <ZoomControls zoom={view.zoom} onZoom={view.handleZoom} />
         </main>

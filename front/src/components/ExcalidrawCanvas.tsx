@@ -85,15 +85,15 @@ const ExcalidrawCanvas = dynamic(
 
       return (
         <div className="relative h-full">
-          <div className="absolute top-3 right-3 z-50">
+          <div className="absolute max-sm:w-11/12 max-sm:bottom-17 bottom-5 max-lg:left-1/2 max-lg:-translate-x-1/2 lg:top-3 lg:right-3 z-50">
             <button
               onClick={handleSendDrawing}
               disabled={!canSend || isSending}
-              className="flex items-center gap-1.5 bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
+              className="flex items-center justify-center gap-1.5 max-sm:w-full bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
               title={`Enviar el dibujo de forma anónima a @${username || '...'}`}
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>{isSending ? 'Enviando...' : `Enviar a @${username}`}</span>
+              <span className='truncate'>{isSending ? 'Enviando...' : `Enviar a @${username}`}</span>
             </button>
           </div>
 

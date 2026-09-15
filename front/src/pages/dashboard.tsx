@@ -43,7 +43,7 @@ export default function Dashboard() {
   const selectedIdsRef = useRef<string[]>(selectedIds)
   selectedIdsRef.current = selectedIds
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [dragNoteId, setDragNoteId] = useState<string | null>(null)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const actionsMenuRef = useRef<HTMLDivElement>(null)
   const [tool, setTool] = useState<"select" | "hand" | "marquee">("select")
@@ -150,7 +150,6 @@ export default function Dashboard() {
     },
     setConfirmDeleteId,
     setNewArrivals,
-    setDragNoteId,
     commit,
   })
 
@@ -164,6 +163,14 @@ export default function Dashboard() {
     },
     [setConfirmDeleteId],
   )
+
+  const togglePalette = () => {
+    if (!paletteOpen) {
+      setSelectedIds([])
+      setConfirmDeleteId(null)
+    }
+    setPaletteOpen((o) => !o)
+  }
 
   const applySnapshot = useCallback(
     (items: Drawing[] | null) => {
@@ -293,7 +300,7 @@ export default function Dashboard() {
           <title>Mi Muro Privado – Anoty</title>
           <meta name="robots" content="noindex" />
         </Head>
-        <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
+<div className="h-dvh bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col overflow-hidden">
           <HeaderShell center={<span className="text-slate-400 text-sm">Validando sesión...</span>} />
         </div>
       </>
@@ -343,20 +350,17 @@ export default function Dashboard() {
               title={boardTitle}
               onTitleChange={setBoardTitle}
               paletteDrawings={paletteDrawings}
-              dragNoteId={dragNoteId}
-              onPaletteDragStart={(e, d) => {
-                e.dataTransfer.setData("text/plain", d._id)
-                e.dataTransfer.effectAllowed = "move"
-                setDragNoteId(d._id)
-              }}
-              onPaletteDragEnd={() => setDragNoteId(null)}
+              onPalettePointerDown={gesture.handlePalettePointerDown}
+              paletteDrag={gesture.paletteDrag}
+              open={paletteOpen}
+              onToggle={togglePalette}
               saving={savingBoard}
               savedFeed={savedFeed}
               onSave={savePublicBoard}
             />
           )}
 
-          {selectedDrawings.length > 0 && selectedMenuPos && (
+          {selectedDrawings.length > 0 && selectedMenuPos && !paletteOpen && (
             <ActionsMenu
               innerRef={actionsMenuRef}
               drawings={selectedDrawings}
@@ -398,9 +402,7 @@ export default function Dashboard() {
           <div
             ref={view.boardRef}
             onPointerDown={tool === "marquee" ? gesture.handleMarqueeStart : gesture.handlePanStart}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={mode === "public" ? gesture.handleDrop : undefined}
-            className={`absolute inset-0 overflow-hidden bg-slate-50 ${
+            className={`absolute inset-0 overflow-hidden touch-none overscroll-none bg-slate-50 ${
               tool === "marquee" ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"
             }`}
             style={{
@@ -408,7 +410,7 @@ export default function Dashboard() {
               backgroundSize: "24px 24px",
             }}
           >
-            {gesture.marqueeRect && !dragNoteId && <MarqueeOverlay rect={gesture.marqueeRect} />}
+            {gesture.marqueeRect && <MarqueeOverlay rect={gesture.marqueeRect} />}
             <NotesCanvas
               items={displayDrawings}
               pan={view.pan}
@@ -425,7 +427,7 @@ export default function Dashboard() {
             />
           </div>
 
-          {!isLoading && displayDrawings.length === 0 && !dragNoteId && (
+          {!isLoading && displayDrawings.length === 0 && (
             <EmptyBoard
               variant={mode === "public" ? "public" : "inbox"}
               shifted={mode === "public"}
@@ -437,10 +439,10 @@ export default function Dashboard() {
           {mode === "inbox" && drawings.length > 0 && (
             <button
               onClick={copyShareLink}
-              className="absolute bottom-5 left-5 z-30 flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-lg hover:border-teal-500/50 hover:text-teal-700 transition-all cursor-pointer"
+              className="absolute bottom-2 left-5 z-30 flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-lg hover:border-teal-500/50 hover:text-teal-700 transition-all cursor-pointer"
             >
               {shareCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-              <span>{shareCopied ? "¡Copiado!" : "Copiar enlace para compartir"}</span>
+              <span className="truncate">{shareCopied ? "¡Copiado!" : "Copiar enlace para compartir"}</span>
             </button>
           )}
 

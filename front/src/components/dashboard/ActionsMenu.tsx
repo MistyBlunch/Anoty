@@ -56,7 +56,7 @@ export default function ActionsMenu({
   return (
     <div
       ref={innerRef}
-      className="absolute z-40 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5"
+      className={`absolute z-40 w-[min(20rem,calc(100vw-2rem))] bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5`}
       style={{
         left: pos.left,
         top: pos.top,

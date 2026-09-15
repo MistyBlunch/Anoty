@@ -18,12 +18,11 @@ export interface BoardGestureHost {
   toggleSelect: (id: string) => void
   setConfirmDeleteId: Dispatch<SetStateAction<string | null>>
   setNewArrivals: Dispatch<SetStateAction<Drawing[]>>
-  setDragNoteId: Dispatch<SetStateAction<string | null>>
   commit: (items: Drawing[]) => void
 }
 
 interface BoardDrag {
-  kind: "pan" | "draw" | "resize" | "marquee"
+  kind: "pan" | "draw" | "resize" | "marquee" | "palette"
   startX: number
   startY: number
   origPanX: number
@@ -37,6 +36,10 @@ interface BoardDrag {
   origH?: number
   moved: boolean
   additive?: boolean
+  paletteId?: string
+  overBoard?: boolean
+  endX?: number
+  endY?: number
 }
 
 export interface MarqueeRect {
@@ -46,16 +49,24 @@ export interface MarqueeRect {
   height: number
 }
 
+export interface PaletteDrag {
+  drawingId: string
+  x: number
+  y: number
+  overBoard: boolean
+}
+
 export interface BoardGesture {
   sidebarHover: boolean
   paletteRef: RefObject<HTMLElement | null>
   dragScale: (d: Drawing) => number
   marqueeRect: MarqueeRect | null
+  paletteDrag: PaletteDrag | null
   handlePanStart: (e: React.PointerEvent) => void
   handleMarqueeStart: (e: React.PointerEvent) => void
   handleDrawStart: (e: React.PointerEvent, d: Drawing) => void
   handleResizeStart: (e: React.PointerEvent, d: Drawing) => void
-  handleDrop: (e: React.DragEvent) => void
+  handlePalettePointerDown: (e: React.PointerEvent, d: Drawing) => void
 }
 
 export function useBoardGesture(host: BoardGestureHost): BoardGesture {
@@ -64,9 +75,40 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
   const paletteRef = useRef<HTMLElement | null>(null)
   const [sidebarHover, setSidebarHover] = useState(false)
   const [marqueeRect, setMarqueeRect] = useState<MarqueeRect | null>(null)
+  const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null)
   const lastMarqueeIdsRef = useRef<string[]>([])
   const hostRef = useRef(host)
   hostRef.current = host
+  const pointerCountRef = useRef(0)
+
+  useEffect(() => {
+    const board = view.boardRef.current
+    if (!board) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (!board.contains(e.target as Node)) return
+      pointerCountRef.current++
+      if (pointerCountRef.current >= 2 && dragRef.current) {
+        const drag = dragRef.current
+        if (drag.kind === "palette" && drag.paletteId) {
+          setPaletteDrag(null)
+          hostRef.current.setDisplayDrawings((prev) => prev.filter((d) => d._id !== drag.paletteId))
+        }
+        dragRef.current = null
+      }
+    }
+    const onPointerUp = (e: PointerEvent) => {
+      if (!board.contains(e.target as Node)) return
+      pointerCountRef.current = Math.max(0, pointerCountRef.current - 1)
+    }
+    window.addEventListener("pointerdown", onPointerDown)
+    window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("pointercancel", onPointerUp)
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown)
+      window.removeEventListener("pointerup", onPointerUp)
+      window.removeEventListener("pointercancel", onPointerUp)
+    }
+  }, [view.boardRef])
 
   const isOverPalette = (x: number, y: number) => {
     const r = paletteRef.current?.getBoundingClientRect()
@@ -172,6 +214,49 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
               : d,
           ),
         )
+      } else if (drag.kind === "palette" && drag.paletteId) {
+        drag.endX = e.clientX
+        drag.endY = e.clientY
+        const dx = e.clientX - drag.startX
+        const dy = e.clientY - drag.startY
+        if (Math.sqrt(dx * dx + dy * dy) > 6) drag.moved = true
+        const boardEl = v.boardRef.current
+        let overBoard = false
+        if (boardEl) {
+          const rect = boardEl.getBoundingClientRect()
+          overBoard = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom && !isOverPalette(e.clientX, e.clientY)
+        }
+        drag.overBoard = overBoard
+        setPaletteDrag({ drawingId: drag.paletteId, x: e.clientX, y: e.clientY, overBoard })
+
+        if (drag.moved) {
+          if (overBoard) {
+            const source = h().inboxDrawingsRef.current.find((d) => d._id === drag.paletteId)
+            if (source) {
+              const rect = boardEl!.getBoundingClientRect()
+              const { pan, zoom } = v.viewRef.current
+              const worldX = (e.clientX - rect.left - pan.x) / zoom
+              const worldY = (e.clientY - rect.top - pan.y) / zoom
+              const item: Drawing = {
+                _id: drag.paletteId,
+                content: source.content,
+                x: Math.round(worldX - (source.width || 320) / 2),
+                y: Math.round(worldY - (source.height || 220) / 2),
+                width: source.width,
+                height: source.height,
+                rotation: source.rotation || 0,
+                authorName: source.authorName,
+                createdAt: source.createdAt,
+                z: h().pubBoardRef.current?.items.filter((it) => it._id !== drag.paletteId).reduce((m, it) => Math.max(m, it.z || 0), 0) ?? 0,
+                transparent: source.transparent === true,
+              }
+              item.z = Math.max(item.z ?? 0, 0) + 1
+              setDisplayDrawings((prev) => [...prev.filter((d) => d._id !== drag.paletteId), item])
+            }
+          } else {
+            setDisplayDrawings((prev) => prev.filter((d) => d._id !== drag.paletteId))
+          }
+        }
       } else {
         setSidebarHover(false)
       }
@@ -188,6 +273,30 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
         dragRef.current = null
         return
       }
+
+      if (drag.kind === "palette") {
+        setPaletteDrag(null)
+        const placed =
+          !!drag.paletteId &&
+          drag.moved &&
+          drag.overBoard &&
+          !!hostCtx.pubBoardRef.current
+        if (placed) {
+          const current = hostCtx.displayRef.current.filter((d) => d._id !== drag.paletteId)
+          const item = hostCtx.displayRef.current.find((d) => d._id === drag.paletteId)
+          if (item) {
+            const final = [...current, item]
+            hostCtx.setDisplayDrawings(() => final)
+            hostCtx.saveDraftItems(final)
+            hostCtx.commit(final)
+          }
+        } else {
+          hostCtx.setDisplayDrawings((prev) => prev.filter((d) => d._id !== drag.paletteId))
+        }
+        dragRef.current = null
+        return
+      }
+
       const {
         displayRef,
         pubBoardRef,
@@ -373,38 +482,23 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handlePalettePointerDown = (e: React.PointerEvent, d: Drawing) => {
     e.preventDefault()
-    const noteId = e.dataTransfer.getData("text/plain")
-    host.setDragNoteId(null)
-    if (!noteId) return
-    const source = host.inboxDrawingsRef.current.find((d) => d._id === noteId)
-    const boardEl = view.boardRef.current
-    const pub = host.pubBoardRef.current
-    if (!source || !boardEl || !pub) return
-    const rect = boardEl.getBoundingClientRect()
-    const { pan: p, zoom: z } = view.viewRef.current
-    const worldX = (e.clientX - rect.left - p.x) / z
-    const worldY = (e.clientY - rect.top - p.y) / z
-    const placed = pub.items.some((it) => it._id === noteId)
-    if (placed) return
-    const item: Drawing = {
-      _id: source._id,
-      content: source.content,
-      x: Math.round(worldX - (source.width || 320) / 2),
-      y: Math.round(worldY - (source.height || 220) / 2),
-      width: source.width,
-      height: source.height,
-      rotation: source.rotation || 0,
-      authorName: source.authorName,
-      createdAt: source.createdAt,
-      z: pub.items.reduce((m, it) => Math.max(m, it.z || 0), 0) + 1,
-      transparent: source.transparent === true,
+    e.stopPropagation()
+    if (e.button !== 0) return
+    dragRef.current = {
+      kind: "palette",
+      startX: e.clientX,
+      startY: e.clientY,
+      origPanX: 0,
+      origPanY: 0,
+      paletteId: d._id,
+      overBoard: false,
+      endX: e.clientX,
+      endY: e.clientY,
+      moved: false,
     }
-    const next = [...pub.items, item]
-    host.setDisplayDrawings(() => next)
-    host.saveDraftItems(next)
-    host.commit(next)
+    setPaletteDrag({ drawingId: d._id, x: e.clientX, y: e.clientY, overBoard: false })
   }
 
   return {
@@ -412,10 +506,11 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
     paletteRef,
     dragScale,
     marqueeRect,
+    paletteDrag,
     handlePanStart,
     handleMarqueeStart,
     handleDrawStart,
     handleResizeStart,
-    handleDrop,
+    handlePalettePointerDown,
   }
 }

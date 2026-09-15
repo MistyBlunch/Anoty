@@ -30,15 +30,12 @@ const CONTENT = {
 export default function EmptyBoard({ variant, shifted, copied, onCopyShare }: EmptyBoardProps) {
   const { icon: Icon, title, description } = CONTENT[variant]
   return (
-    <div
-      className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none ${
-        shifted ? "left-64" : ""
-      }`}
-    >
-      <div
-        className="glass-card rounded-3xl p-10 text-center border border-slate-200 max-w-md pointer-events-auto"
-        style={{ width: 480 }}
+<div
+        className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none ${
+          shifted ? "sm:left-64" : ""
+        }`}
       >
+        <div className="glass-card rounded-3xl p-6 sm:p-10 text-center border border-slate-200 w-[min(28rem,calc(100vw-3.5rem))] pointer-events-auto">
         <div className="w-16 h-16 rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/20 flex items-center justify-center mx-auto mb-4">
           <Icon className="w-8 h-8" />
         </div>
