@@ -19,6 +19,7 @@ import {
   applyTransparency,
   type Drawing,
 } from "@/lib/board"
+import es from "@/lib/i18n/es"
 
 const draw = (over = {}): Drawing => ({
   _id: "1",
@@ -74,22 +75,28 @@ describe("clamp", () => {
 })
 
 describe("hintForTool", () => {
+  // Use the Spanish dictionary so the existing string assertions still hold
+  const tES = (key: string) => {
+    const val = (es as Record<string, string | ((...args: any[]) => string)>)[key]
+    return typeof val === "function" ? val() : (val ?? key)
+  }
+
   it("shows the hand hint regardless of mode", () => {
-    expect(hintForTool("hand", "inbox")).toContain("Modo mano")
-    expect(hintForTool("hand", "public")).toContain("Modo mano")
+    expect(hintForTool("hand", "inbox", tES)).toContain("Modo mano")
+    expect(hintForTool("hand", "public", tES)).toContain("Modo mano")
   })
 
   it("shows the marquee hint mentioning Shift", () => {
-    expect(hintForTool("marquee", "inbox")).toContain("Shift")
-    expect(hintForTool("marquee", "public")).toContain("varios dibujos")
+    expect(hintForTool("marquee", "inbox", tES)).toContain("Shift")
+    expect(hintForTool("marquee", "public", tES)).toContain("varios dibujos")
   })
 
   it("mentions the sidebar in public select mode", () => {
-    expect(hintForTool("select", "public")).toContain("panel izquierdo")
+    expect(hintForTool("select", "public", tES)).toContain("panel izquierdo")
   })
 
   it("shows move/zoom hints in inbox select mode", () => {
-    const hint = hintForTool("select", "inbox")
+    const hint = hintForTool("select", "inbox", tES)
     expect(hint).toContain("Arrastra el fondo")
     expect(hint).toContain("M: selección múltiple")
   })

@@ -1,4 +1,5 @@
 import { Inbox, Globe } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface BoardSwitcherProps {
   mode: "inbox" | "public"
@@ -7,6 +8,7 @@ interface BoardSwitcherProps {
 }
 
 export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcherProps) {
+  const { t } = useLanguage()
   return (
     <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 border border-slate-200 p-0.5 sm:p-1 rounded-xl">
       <button
@@ -16,10 +18,10 @@ export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcher
             ? "bg-white text-teal-700 shadow-sm border border-slate-200"
             : "text-slate-500 hover:text-slate-700"
         }`}
-        title="Mis anotys"
+        title={t("mode_inbox")}
       >
         <Inbox className="w-4 h-4" />
-        <span className="hidden sm:inline">Mis anotys</span>
+        <span className="hidden sm:inline">{t("mode_inbox")}</span>
       </button>
       <button
         onClick={onPublic}
@@ -28,10 +30,10 @@ export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcher
             ? "bg-white text-teal-700 shadow-sm border border-slate-200"
             : "text-slate-500 hover:text-slate-700"
         }`}
-        title="Muro público"
+        title={t("mode_public")}
       >
         <Globe className="w-4 h-4" />
-        <span className="hidden sm:inline">Muro público</span>
+        <span className="hidden sm:inline">{t("mode_public")}</span>
       </button>
     </div>
   )

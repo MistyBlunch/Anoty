@@ -1,6 +1,8 @@
 import { LogOut } from "lucide-react"
 import type { Drawing } from "@/lib/board"
 import type { AuthenticatedUser } from "@/types/auth"
+import { useLanguage } from "@/context/LanguageContext"
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import NotificationsDropdown from "./NotificationsDropdown"
 import BoardSwitcher from "./BoardSwitcher"
 
@@ -29,8 +31,10 @@ export default function HeaderActions({
   onClearNotifications,
   onLogout,
 }: HeaderActionsProps) {
+  const { t } = useLanguage()
   return (
     <div className="flex items-center gap-1.5 sm:gap-3">
+      <LanguageSwitcher />
       <BoardSwitcher mode={mode} onInbox={onInbox} onPublic={onPublic} />
       <NotificationsDropdown
         user={user}
@@ -43,7 +47,7 @@ export default function HeaderActions({
       <button
         onClick={onLogout}
         className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
-        title="Cerrar sesión"
+        title={t("header_logout_title")}
       >
         <LogOut className="w-4 h-4" />
       </button>

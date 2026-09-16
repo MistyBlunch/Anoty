@@ -8,11 +8,14 @@ import { motion } from "framer-motion"
 import { api } from "@/lib/api"
 import ExcalidrawCanvas from "@/components/ExcalidrawCanvas"
 import HeaderShell from "@/components/layout/HeaderShell"
+import { useLanguage } from "@/context/LanguageContext"
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import type { RecipientUser } from "@/types/auth"
 
 export default function SendNote() {
   const router = useRouter()
   const { username } = router.query as { username: string }
+  const { t } = useLanguage()
 
   const [isSuccess, setIsSuccess] = useState(false)
   const [recipient, setRecipient] = useState<RecipientUser | null>(null)
@@ -32,10 +35,10 @@ export default function SendNote() {
   return (
     <>
       <Head>
-        <title>{`Envía una nota anónima a @${username || ""} – Anoty`}</title>
+        <title>{t("send_title", username || "")}</title>
         <meta
           name="description"
-          content={`Envía un mensaje o dibujo anónimo a @${username}. Solo ellos podrán verlo.`}
+          content={t("send_description", username || "")}
         />
       </Head>
 
@@ -55,7 +58,7 @@ export default function SendNote() {
                 {recipient?.avatar ? (
                   <Image
                     src={recipient.avatar}
-                    alt={`Avatar de ${recipient.name}`}
+                    alt={t("send_avatar_alt", recipient.name)}
                     width={64}
                     height={64}
                     className="w-full h-full object-cover"
@@ -69,19 +72,27 @@ export default function SendNote() {
                 )}
               </div>
               <h1 className="text-base/tight md:text-2xl sm:text-lg font-extrabold text-slate-900 mb-0 min-w-0">
-                Envía una nota a{" "}
-                <span className="gradient-text">@{username}</span>
+                {t("send_header_title", username || "")
+                  .split(`@${username}`)
+                  .flatMap((part, i, arr) =>
+                    i < arr.length - 1
+                      ? [part, <span key={i} className="gradient-text">@{username}</span>]
+                      : [part],
+                  )}
               </h1>
             </div>
           }
           right={
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver al inicio</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <button
+                onClick={() => router.push("/")}
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("send_back")}</span>
+              </button>
+            </div>
           }
         />
 
@@ -98,11 +109,14 @@ export default function SendNote() {
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
-                ¡Dibujo enviado con éxito! 🎉
+                {t("send_success_heading")}
               </h2>
               <p className="text-slate-600 text-xs sm:text-sm mb-6 leading-relaxed">
-                Tu dibujo fue guardado de forma anónima en el muro privado de{" "}
-                <strong className="text-teal-700">@{username}</strong>.
+                {t("send_success_body", username || "").split(`@${username}`).flatMap((part, i, arr) =>
+                  i < arr.length - 1
+                    ? [part, <strong key={i} className="text-teal-700">@{username}</strong>]
+                    : [part],
+                )}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -111,13 +125,13 @@ export default function SendNote() {
                   className="gradient-button text-white font-semibold px-6 py-3 rounded-xl text-sm inline-flex items-center gap-2 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Dibujar otra nota</span>
+                  <span>{t("send_another")}</span>
                 </button>
                 <button
                   onClick={() => router.push("/")}
                   className="glass-panel text-slate-700 font-medium px-6 py-3 rounded-xl border border-slate-200 text-sm inline-flex items-center gap-2 hover:bg-slate-100 transition-all cursor-pointer"
                 >
-                  Crear mi propio muro
+                  {t("send_create_wall")}
                 </button>
               </div>
             </motion.div>

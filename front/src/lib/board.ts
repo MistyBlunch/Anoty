@@ -39,14 +39,19 @@ export interface MenuPosition {
   above: boolean
 }
 
-export const hintForTool = (tool: "select" | "hand" | "marquee", mode: "inbox" | "public") =>
+export const hintForTool = (
+  tool: "select" | "hand" | "marquee",
+  mode: "inbox" | "public",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: any) => string,
+) =>
   tool === "hand"
-    ? "Modo mano — arrastra para mover el lienzo • Rueda o pellizco para zoom • V: seleccionar • Ctrl+Z: deshacer"
+    ? t("hint_hand")
     : tool === "marquee"
-      ? "Arrastra en el lienzo para seleccionar varios dibujos • Mantén Shift mientras arrastras para sumar • Esc: salir"
+      ? t("hint_marquee")
       : mode === "public"
-        ? "Arrastra tus dibujos • Mueve y reordena como quieras • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
-        : "Arrastra el fondo para moverte • Rueda o pellizco para zoom • Arrastra un dibujo para moverlo • M: selección múltiple • H: mano • Ctrl+Z: deshacer"
+        ? t("hint_public")
+        : t("hint_inbox")
 
 export interface LayerReorder {
   next: Drawing[]

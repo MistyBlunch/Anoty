@@ -15,12 +15,15 @@ import { api } from "@/lib/api"
 import type { AuthenticatedUser } from "@/types/auth"
 
 import { useAuth } from "@/hooks/useAuth"
+import { useLanguage } from "@/context/LanguageContext"
 import HeaderShell from "@/components/layout/HeaderShell"
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 
 export default function Home() {
   const router = useRouter()
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const { user, saveSession, logout } = useAuth({ redirect: false })
+  const { t } = useLanguage()
 
   const loginWithGoogle = useGoogleLogin({
     scope: "openid email profile",
@@ -35,23 +38,23 @@ export default function Home() {
           saveSession(data.user, data.token)
           router.push("/dashboard")
         } else {
-          alert(`Error: ${data.message || "No se pudo iniciar sesión"}`)
+          alert(`Error: ${data.message || t("login_error_default")}`)
         }
       } catch (error) {
-        console.error("Error al conectar con el backend:", error)
-        alert("No se pudo conectar con el servidor backend")
+        console.error("Error connecting to backend:", error)
+        alert(t("login_backend_error"))
       } finally {
         setIsLoggingIn(false)
       }
     },
-    onError: () => alert("Fallo al abrir la ventana de Google OAuth"),
+    onError: () => alert(t("login_oauth_error")),
   })
 
   return (
     <>
       <Head>
-        <title>Anoty – Mensajes y dibujos anónimos para tus amigos</title>
-        <meta name="description" content="Crea tu muro privado con Google y recibe mensajes y dibujos anónimos de tus amigos. Solo tú puedes verlos." />
+        <title>{t("home_title")}</title>
+        <meta name="description" content={t("home_description")} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" />
       </Head>
@@ -66,36 +69,40 @@ export default function Home() {
           right={
             user ? (
               <div className="flex items-center gap-2 sm:gap-3">
+                <LanguageSwitcher />
                 <button
                   onClick={() => router.push("/dashboard")}
                   className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-3 sm:px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Mi Muro Privado</span>
+                  <span className="hidden sm:inline">{t("my_private_wall")}</span>
                 </button>
                 <button
                   onClick={logout}
                   className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
-                  title="Cerrar sesión"
+                  title={t("sign_out")}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => loginWithGoogle()}
-                disabled={isLoggingIn}
-                className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-teal-500/50 cursor-pointer active:scale-95"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
-                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
-                  <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
-                  <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
-                </svg>
-                <span className="hidden sm:inline">Ingresar con Google</span>
-                <span className="sm:hidden">{isLoggingIn ? "..." : "Ingresar"}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <button
+                  onClick={() => loginWithGoogle()}
+                  disabled={isLoggingIn}
+                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm hover:border-teal-500/50 cursor-pointer active:scale-95"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                    <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+                  </svg>
+                  <span className="hidden sm:inline">{t("login_with_google")}</span>
+                  <span className="sm:hidden">{isLoggingIn ? "..." : t("login_short")}</span>
+                </button>
+              </div>
             )
           }
         />
@@ -109,16 +116,16 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-teal-500/30 text-teal-700 text-xs font-semibold uppercase tracking-wider mb-8 shadow-inner">
               <Sparkles className="w-3.5 h-3.5 text-teal-500 animate-pulse" />
-              <span>Tus mensajes y dibujos anónimos, 100% privados</span>
+              <span>{t("hero_badge")}</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-              Recibe notas y dibujos secretos de tus amigos <br className="hidden sm:block" />
-              <span className="gradient-text">que solo TÚ podrás ver</span>
+              {t("hero_heading_1")} <br className="hidden sm:block" />
+              <span className="gradient-text">{t("hero_heading_2")}</span>
             </h1>
 
             <p className="text-slate-600 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-              Crea tu muro privado en 1 segundo con Google. Comparte tu enlace personal y recibe mensajes y dibujos a mano alzada. Tu muro es totalmente privado.
+              {t("hero_subheading")}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -128,7 +135,7 @@ export default function Home() {
                   className="w-full sm:w-auto gradient-button text-white font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 text-base shadow-lg cursor-pointer"
                 >
                   <LayoutDashboard className="w-5 h-5" />
-                  <span>Ir a mi Muro Privado</span>
+                  <span>{t("go_to_my_wall")}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               ) : (
@@ -143,16 +150,16 @@ export default function Home() {
                     <path fill="#ffffff" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
                     <path fill="#ffffff" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
                   </svg>
-                  <span>{isLoggingIn ? "Conectando..." : "Crear mi muro privado con Google"}</span>
+                  <span>{isLoggingIn ? t("connecting") : t("hero_cta_create")}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               )}
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-6 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Sin contraseñas</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 100% Privado para ti</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Amigos sin registro</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" />{t("hero_check_no_passwords")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" />{t("hero_check_private")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" />{t("hero_check_no_register")}</span>
             </div>
           </motion.div>
         </section>
@@ -166,7 +173,7 @@ export default function Home() {
               </div>
               <span className="font-bold text-slate-700 font-mono text-sm">Anoty</span>
             </div>
-            <p>© 2026 Anoty App. Mensajes y dibujos anónimos y privados.</p>
+            <p>© 2026 Anoty App. {t("footer_tagline")}</p>
           </div>
         </footer>
       </div>

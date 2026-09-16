@@ -2,6 +2,7 @@ import { Settings, Palette, Save, Check, RefreshCw, Plus, X } from "lucide-react
 import SvgSafe from "@/components/svg/SvgSafe"
 import type { Drawing } from "@/types/drawing"
 import type { PaletteDrag } from "@/hooks/useBoardGesture"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface PublicSidebarProps {
   innerRef: React.Ref<HTMLElement>
@@ -32,7 +33,10 @@ export default function PublicSidebar({
   savedFeed,
   onSave,
 }: PublicSidebarProps) {
+  const { t } = useLanguage()
   const ghost = paletteDrag ? paletteDrawings.find((d) => d._id === paletteDrag.drawingId) ?? null : null
+
+  const saveLabel = saving ? t("sidebar_saving") : savedFeed ? t("sidebar_saved") : t("sidebar_save_wall")
 
   return (
     <>
@@ -46,7 +50,7 @@ export default function PublicSidebar({
         {hovered && (
           <div className="absolute inset-x-0 top-2 z-30 flex justify-center pointer-events-none">
             <span className="bg-teal-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-teal-400/50">
-              Suelta para quitar
+              {t("sidebar_drop_to_remove")}
             </span>
           </div>
         )}
@@ -54,25 +58,25 @@ export default function PublicSidebar({
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Settings className="w-4 h-4 text-teal-600" />
-              Configuración
+              {t("sidebar_settings")}
             </p>
             <button
               onClick={onToggle}
               className="sm:hidden -m-1 p-1 rounded-md text-slate-400 hover:text-slate-600"
-              aria-label="Cerrar panel"
+              aria-label={t("sidebar_close_panel")}
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <label className="block">
             <span className="block text-[10px] font-semibold text-slate-500 mb-1">
-              Nombre de tu muro
+              {t("sidebar_wall_name")}
             </span>
             <input
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
               maxLength={80}
-              placeholder="Mi Muro Público"
+              placeholder={t("sidebar_wall_placeholder")}
               className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-all"
             />
           </label>
@@ -80,14 +84,14 @@ export default function PublicSidebar({
         <div className="px-4 py-3 border-b border-slate-100">
           <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <Palette className="w-4 h-4 text-teal-600" />
-            Tus dibujos
+            {t("sidebar_your_drawings")}
           </p>
-          <p className="text-[10px] text-slate-400 mt-0.5">Toca y arrastra uno al muro</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{t("sidebar_drag_hint")}</p>
         </div>
         <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 content-start">
           {paletteDrawings.length === 0 ? (
             <p className="col-span-2 text-center text-[11px] text-slate-400 py-6">
-              No tienes dibujos sin colocar.
+              {t("sidebar_no_drawings")}
             </p>
           ) : (
             paletteDrawings.map((d) => (
@@ -99,7 +103,7 @@ export default function PublicSidebar({
                     ? "opacity-40 border-teal-500/50"
                     : "border-slate-200 hover:border-teal-500/50"
                 }`}
-                title="Arrastrar al muro"
+                title={t("sidebar_drag_to_wall")}
               >
                 <SvgSafe svg={d.content} className="w-full h-full" />
               </div>
@@ -121,7 +125,7 @@ export default function PublicSidebar({
             ) : (
               <Save className="w-4 h-4" />
             )}
-            <span>{saving ? "Guardando..." : savedFeed ? "¡Guardado!" : "Guardar muro"}</span>
+            <span>{saveLabel}</span>
           </button>
         </div>
       </aside>
@@ -133,7 +137,7 @@ export default function PublicSidebar({
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-teal-600 text-white text-xs font-bold shadow-xl shadow-teal-900/20 active:scale-95 transition-transform"
           >
             <Plus className="w-4 h-4" />
-            Añadir dibujos
+            {t("sidebar_add_drawings")}
           </button>
           <button
             onClick={onSave}
@@ -149,7 +153,7 @@ export default function PublicSidebar({
             ) : (
               <Save className="w-4 h-4" />
             )}
-            <span>{saving ? "Guardando..." : savedFeed ? "¡Guardado!" : "Guardar muro"}</span>
+            <span>{saveLabel}</span>
           </button>
         </div>
       )}

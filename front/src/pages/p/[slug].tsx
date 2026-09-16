@@ -9,12 +9,14 @@ import type { Drawing } from "@/types/drawing"
 import { useZoomPan } from "@/hooks/useZoomPan"
 import { useFitToContent } from "@/hooks/useFitToContent"
 import { useRealtimeBoard } from "@/hooks/useRealtimeBoard"
+import { useLanguage } from "@/context/LanguageContext"
 
 import HeaderShell from "@/components/layout/HeaderShell"
 import NotesCanvas from "@/components/board/NotesCanvas"
 import ZoomControls from "@/components/board/ZoomControls"
 import HintBar from "@/components/board/HintBar"
 import EmptyBoard from "@/components/board/EmptyBoard"
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 
 interface BoardDrag {
   startX: number
@@ -27,6 +29,7 @@ interface BoardDrag {
 export default function PublicBoardView() {
   const router = useRouter()
   const slug = (router.query.slug as string) || ""
+  const { t } = useLanguage()
 
   const [title, setTitle] = useState("")
   const [items, setItems] = useState<Drawing[]>([])
@@ -50,7 +53,7 @@ export default function PublicBoardView() {
         const payload = data as unknown as Record<string, unknown>
         const rawItems = payload.items as unknown[] | undefined
         updatedAtRef.current = (payload.updatedAt as string) || null
-        setTitle((payload.title as string) || "Muro Público")
+        setTitle((payload.title as string) || t("public_default_title"))
         setItems(
           (rawItems || []).map((raw) => {
             const it = raw as Record<string, unknown>
@@ -72,6 +75,7 @@ export default function PublicBoardView() {
         setStatus("ready")
       })
       .catch(() => setStatus("notfound"))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -132,12 +136,12 @@ export default function PublicBoardView() {
     return (
       <>
         <Head>
-          <title>Cargando muro... – Anoty</title>
+          <title>{t("public_loading_title")}</title>
         </Head>
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <div className="text-center">
             <RefreshCw className="w-8 h-8 text-teal-500 animate-spin mx-auto mb-3" />
-            <p className="text-slate-600 text-sm">Cargando muro público...</p>
+            <p className="text-slate-600 text-sm">{t("public_loading_text")}</p>
           </div>
         </div>
       </>
@@ -148,27 +152,30 @@ export default function PublicBoardView() {
     return (
       <>
         <Head>
-          <title>Muro no encontrado – Anoty</title>
+          <title>{t("public_notfound_title")}</title>
         </Head>
         <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
-          <HeaderShell onLogoClick={() => router.push("/")} />
+          <HeaderShell
+            onLogoClick={() => router.push("/")}
+            right={<LanguageSwitcher />}
+          />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-md px-6">
               <div className="w-16 h-16 rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/20 flex items-center justify-center mx-auto mb-4">
                 <MessageSquareHeart className="w-8 h-8" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900 mb-3">
-                Este muro no existe o está oculto
+                {t("public_notfound_heading")}
               </h1>
               <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                El enlace puede estar mal escrito o el dueño lo despublicó.
+                {t("public_notfound_description")}
               </p>
               <button
                 onClick={() => router.push("/")}
                 className="inline-flex items-center gap-2 bg-teal-600 text-white font-semibold px-6 py-3 rounded-xl text-sm shadow-lg hover:bg-teal-500 transition-colors cursor-pointer"
               >
                 <Home className="w-4 h-4" />
-                Volver a Anoty
+                {t("public_notfound_back")}
               </button>
             </div>
           </div>
@@ -181,7 +188,7 @@ export default function PublicBoardView() {
     <>
       <Head>
         <title>{`${title} – Anoty`}</title>
-        <meta name="description" content={`Muro público de dibujos anónimos: ${title}`} />
+        <meta name="description" content={t("public_board_description", title)} />
       </Head>
 
       <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
@@ -190,6 +197,7 @@ export default function PublicBoardView() {
           center={
             <h1 className="text-sm font-bold text-slate-800 truncate max-w-[60vw]">{title}</h1>
           }
+          right={<LanguageSwitcher />}
         />
 
         <main className="flex-1 relative overflow-hidden select-none">
@@ -207,7 +215,7 @@ export default function PublicBoardView() {
 
           {items.length === 0 && <EmptyBoard variant="viewer" />}
 
-          <HintBar text="Mantén y arrastra para moverte • Zoom con rueda o pellizco" />
+          <HintBar text={t("hint_viewer")} />
 
           <ZoomControls zoom={view.zoom} onZoom={view.handleZoom} />
         </main>

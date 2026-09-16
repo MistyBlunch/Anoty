@@ -19,6 +19,7 @@ import { useUndoRedo } from "@/hooks/useUndoRedo"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 import { useSelectionActions } from "@/hooks/useSelectionActions"
 import { useActionsMenuPosition } from "@/hooks/useActionsMenuPosition"
+import { useLanguage } from "@/context/LanguageContext"
 
 import HeaderShell from "@/components/layout/HeaderShell"
 import HintBar from "@/components/board/HintBar"
@@ -30,10 +31,12 @@ import ActionsMenu from "@/components/dashboard/ActionsMenu"
 import HeaderActions from "@/components/dashboard/HeaderActions"
 import PublicSidebar from "@/components/dashboard/PublicSidebar"
 import PublicControls from "@/components/dashboard/PublicControls"
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 
 export default function Dashboard() {
   const router = useRouter()
   const { user, logout, isReady } = useAuth()
+  const { t } = useLanguage()
 
   const [mode, setMode] = useState<"inbox" | "public">("inbox")
   const modeRef = useRef(mode)
@@ -266,7 +269,7 @@ export default function Dashboard() {
     for (const d of selectedDrawings) {
       const ok = await deleteNote(d._id)
       if (!ok) {
-        alert("Error al eliminar un dibujo")
+        alert(t("delete_drawing_error"))
         break
       }
     }
@@ -291,17 +294,17 @@ export default function Dashboard() {
 
   if (!user) return null
 
-  const hintText = hintForTool(tool, mode)
+  const hintText = hintForTool(tool, mode, t)
 
   if (!isReady) {
     return (
       <>
         <Head>
-          <title>Mi Muro Privado – Anoty</title>
+          <title>{t("dashboard_title")}</title>
           <meta name="robots" content="noindex" />
         </Head>
-<div className="h-dvh bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col overflow-hidden">
-          <HeaderShell center={<span className="text-slate-400 text-sm">Validando sesión...</span>} />
+        <div className="h-dvh bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col overflow-hidden">
+          <HeaderShell center={<span className="text-slate-400 text-sm">{t("validating_session")}</span>} />
         </div>
       </>
     )
@@ -310,8 +313,8 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Mi Muro Privado – Anoty</title>
-        <meta name="description" content="Tu tablero privado de dibujos anónimos." />
+        <title>{t("dashboard_title")}</title>
+        <meta name="description" content={t("dashboard_description")} />
         <meta name="robots" content="noindex" />
       </Head>
 
@@ -319,24 +322,26 @@ export default function Dashboard() {
         <HeaderShell
           onLogoClick={() => router.push("/")}
           right={
-            <HeaderActions
-              user={user}
-              mode={mode}
-              onInbox={() => {
-                setMode("inbox")
-                fitToContent(drawings)
-              }}
-              onPublic={() => setMode("public")}
-              newArrivals={newArrivals}
-              notificationsOpen={notificationsOpen}
-              onToggleNotifications={() => {
-                setMode("inbox")
-                setNotificationsOpen((o) => !o)
-              }}
-              onFocusDrawing={focusDrawing}
-              onClearNotifications={handleClearNotifications}
-              onLogout={logout}
-            />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <HeaderActions
+                user={user}
+                mode={mode}
+                onInbox={() => {
+                  setMode("inbox")
+                  fitToContent(drawings)
+                }}
+                onPublic={() => setMode("public")}
+                newArrivals={newArrivals}
+                notificationsOpen={notificationsOpen}
+                onToggleNotifications={() => {
+                  setMode("inbox")
+                  setNotificationsOpen((o) => !o)
+                }}
+                onFocusDrawing={focusDrawing}
+                onClearNotifications={handleClearNotifications}
+                onLogout={logout}
+              />
+            </div>
           }
         />
 
@@ -393,7 +398,7 @@ export default function Dashboard() {
               <div className="text-center">
                 <RefreshCw className="w-8 h-8 text-teal-500 animate-spin mx-auto mb-3" />
                 <p className="text-slate-600 text-sm">
-                  {mode === "public" ? "Cargando tu muro público..." : "Cargando tu muro..."}
+                  {mode === "public" ? t("loading_public_board") : t("loading_inbox")}
                 </p>
               </div>
             </div>
@@ -442,7 +447,7 @@ export default function Dashboard() {
               className="absolute bottom-2 left-5 z-30 flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-lg hover:border-teal-500/50 hover:text-teal-700 transition-all cursor-pointer"
             >
               {shareCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-              <span className="truncate">{shareCopied ? "¡Copiado!" : "Copiar enlace para compartir"}</span>
+              <span className="truncate">{shareCopied ? t("copied") : t("copy_share_link")}</span>
             </button>
           )}
 
