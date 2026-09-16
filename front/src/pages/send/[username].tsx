@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import type { GetServerSideProps } from "next"
 import { useRouter } from "next/router"
 import Head from "next/head"
 import Image from "next/image"
@@ -6,15 +7,57 @@ import Script from "next/script"
 import { Send, CheckCircle2, ArrowLeft } from "lucide-react"
 import { motion } from "framer-motion"
 import { api } from "@/lib/api"
+import { translations, type Locale } from "@/lib/i18n"
 import ExcalidrawCanvas from "@/components/ExcalidrawCanvas"
 import HeaderShell from "@/components/layout/HeaderShell"
 import { useLanguage } from "@/context/LanguageContext"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import type { RecipientUser } from "@/types/auth"
 
-export default function SendNote() {
+interface SendNoteProps {
+  username: string
+  initialLocale: Locale
+  metaTitle: string
+  metaDescription: string
+  canonicalUrl: string
+}
+
+export const getServerSideProps: GetServerSideProps<SendNoteProps> = async (context) => {
+  const rawUsername = context.params?.username
+  const username = typeof rawUsername === "string" ? rawUsername : ""
+  const queryLang = context.query.lang
+  const initialLocale: Locale = queryLang === "es" ? "es" : "en"
+
+  const dict = translations[initialLocale]
+  const titleFn = dict.send_title as (u: string) => string
+  const descFn = dict.send_description as (u: string) => string
+
+  const metaTitle = typeof titleFn === "function" ? titleFn(username) : `Send an anonymous note to @${username} – Anoty`
+  const metaDescription = typeof descFn === "function" ? descFn(username) : `Send an anonymous message or drawing to @${username}. Only they can see it.`
+
+  const host = context.req.headers.host || "anoty.app"
+  const protocol = host.includes("localhost") ? "http" : "https"
+  const canonicalUrl = `${protocol}://${host}/send/${username}${queryLang === "es" ? "?lang=es" : ""}`
+
+  return {
+    props: {
+      username,
+      initialLocale,
+      metaTitle,
+      metaDescription,
+      canonicalUrl,
+    },
+  }
+}
+
+export default function SendNote({
+  username: initialUsername,
+  metaTitle,
+  metaDescription,
+  canonicalUrl,
+}: SendNoteProps) {
   const router = useRouter()
-  const { username } = router.query as { username: string }
+  const username = initialUsername || (router.query.username as string) || ""
   const { t } = useLanguage()
 
   const [isSuccess, setIsSuccess] = useState(false)
@@ -32,14 +75,27 @@ export default function SendNote() {
       .catch(() => {})
   }, [username])
 
+  const dynamicTitle = t("send_title", username || "")
+  const dynamicDescription = t("send_description", username || "")
+
   return (
     <>
       <Head>
-        <title>{t("send_title", username || "")}</title>
-        <meta
-          name="description"
-          content={t("send_description", username || "")}
-        />
+        <title>{dynamicTitle || metaTitle}</title>
+        <meta name="description" content={dynamicDescription || metaDescription} />
+
+        {/* Open Graph / Social Sharing (WhatsApp, Twitter, Discord, iMessage, etc.) */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={dynamicTitle || metaTitle} />
+        <meta property="og:description" content={dynamicDescription || metaDescription} />
+        <meta property="og:image" content="/favicon.svg" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={dynamicTitle || metaTitle} />
+        <meta name="twitter:description" content={dynamicDescription || metaDescription} />
+        <meta name="twitter:image" content="/favicon.svg" />
       </Head>
 
       <Script id="load-excalidraw-asset-path" strategy="beforeInteractive">

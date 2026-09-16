@@ -14,15 +14,33 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE)
+export function LanguageProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode
+  initialLocale?: Locale
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale || DEFAULT_LOCALE)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (stored && (stored === "en" || stored === "es")) {
-      setLocaleState(stored)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const urlLang = params.get("lang") as Locale | null
+      if (urlLang === "en" || urlLang === "es") {
+        setLocaleState(urlLang)
+        localStorage.setItem(STORAGE_KEY, urlLang)
+        return
+      }
+
+      const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
+      if (stored && (stored === "en" || stored === "es")) {
+        setLocaleState(stored)
+      } else if (initialLocale) {
+        setLocaleState(initialLocale)
+      }
     }
-  }, [])
+  }, [initialLocale])
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next)

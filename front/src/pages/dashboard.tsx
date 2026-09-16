@@ -36,7 +36,7 @@ import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 export default function Dashboard() {
   const router = useRouter()
   const { user, logout, isReady } = useAuth()
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   const [mode, setMode] = useState<"inbox" | "public">("inbox")
   const modeRef = useRef(mode)
@@ -237,8 +237,8 @@ export default function Dashboard() {
   const selectedMenuPos = useActionsMenuPosition(selectedDrawings, actionsMenuRef, view)
 
   const shareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/send/${user?.username}`
-    : `/send/${user?.username}`
+    ? `${window.location.origin}/send/${user?.username}${locale === "es" ? "?lang=es" : ""}`
+    : `/send/${user?.username}${locale === "es" ? "?lang=es" : ""}`
 
   const copyShareLink = () => {
     copyShare(shareUrl)

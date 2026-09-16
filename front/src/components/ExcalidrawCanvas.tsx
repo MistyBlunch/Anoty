@@ -17,6 +17,7 @@ const ExcalidrawInner = dynamic(
     return function ExcalidrawCanvasInner({
       username,
       onSent,
+      langCode,
       sendLabel,
       sendingLabel,
       sendTitle,
@@ -26,6 +27,7 @@ const ExcalidrawInner = dynamic(
       errorDefault,
       errorBackend,
     }: ExcalidrawCanvasProps & {
+      langCode: string
       sendLabel: string
       sendingLabel: string
       sendTitle: string
@@ -119,6 +121,7 @@ const ExcalidrawInner = dynamic(
           </div>
 
           <Excalidraw
+            langCode={langCode}
             excalidrawAPI={(api: any) => {
               excalidrawApiRef.current = api
             }}
@@ -154,11 +157,14 @@ const ExcalidrawInner = dynamic(
 )
 
 export default function ExcalidrawCanvas({ username, onSent }: ExcalidrawCanvasProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const langCode = locale === 'es' ? 'es-ES' : 'en'
+
   return (
     <ExcalidrawInner
       username={username}
       onSent={onSent}
+      langCode={langCode}
       sendLabel={t('send_button', username || '...')}
       sendingLabel={t('send_sending')}
       sendTitle={t('send_button_title', username || '...')}

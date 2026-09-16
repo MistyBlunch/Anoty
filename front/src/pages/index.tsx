@@ -28,7 +28,7 @@ export default function Home() {
   const router = useRouter()
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const { user, saveSession, logout } = useAuth({ redirect: false })
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   const [copiedLink, setCopiedLink] = useState(false)
   const [origin, setOrigin] = useState("https://anoty.app")
@@ -39,7 +39,9 @@ export default function Home() {
     }
   }, [])
 
-  const shareUrl = user ? `${origin}/send/${user.username}` : `${origin}/send/yourname`
+  const shareUrl = user
+    ? `${origin}/send/${user.username}${locale === "es" ? "?lang=es" : ""}`
+    : `${origin}/send/yourname${locale === "es" ? "?lang=es" : ""}`
 
   const handleCopyLink = async () => {
     try {
@@ -229,7 +231,6 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono select-all overflow-x-auto">
-                  <span className="text-teal-600 font-bold">🔗</span>
                   <span className="truncate">{shareUrl}</span>
                 </div>
               </div>
