@@ -37,9 +37,7 @@ const ExcalidrawInner = dynamic(
       errorDefault: string
       errorBackend: string
     }) {
-      const [elements, setElements] = useState<readonly any[]>([])
-      const [appState, setAppState] = useState<any>(null)
-      const [files, setFiles] = useState<any>(null)
+      const [hasElements, setHasElements] = useState(false)
       const [isSending, setIsSending] = useState(false)
       const excalidrawApiRef = useRef<any>(null)
 
@@ -63,12 +61,20 @@ const ExcalidrawInner = dynamic(
       }, [])
 
       const handleSendDrawing = async () => {
-        if (!username || !elements || elements.length === 0) return
+        const apiInstance = excalidrawApiRef.current
+        if (!apiInstance || !username) return
+
+        const elements = apiInstance.getSceneElements()
+        const activeElements = elements?.filter((el: any) => !el.isDeleted)
+        if (!activeElements || activeElements.length === 0) return
+
+        const appState = apiInstance.getAppState()
+        const files = apiInstance.getFiles()
         setIsSending(true)
 
         try {
           const svg = await exportToSvg({
-            elements,
+            elements: activeElements,
             appState: {
               ...appState,
               exportBackground: false,
@@ -104,7 +110,7 @@ const ExcalidrawInner = dynamic(
         }
       }
 
-      const canSend = username && elements && elements.length > 0
+      const canSend = Boolean(username && hasElements)
 
       return (
         <div className="relative h-full">
@@ -125,10 +131,9 @@ const ExcalidrawInner = dynamic(
             excalidrawAPI={(api: any) => {
               excalidrawApiRef.current = api
             }}
-            onChange={(els: readonly any[], app: any, fls: any) => {
-              setElements(els)
-              setAppState(app)
-              setFiles(fls)
+            onChange={(els: readonly any[]) => {
+              const isNotEmpty = Boolean(els && els.some((el: any) => !el.isDeleted))
+              setHasElements((prev) => (prev !== isNotEmpty ? isNotEmpty : prev))
             }}
           >
             <MainMenu>

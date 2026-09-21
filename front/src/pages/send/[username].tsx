@@ -103,9 +103,6 @@ export default function SendNote({
       </Script>
 
       <div className="h-dvh bg-white text-slate-800 selection:bg-teal-500 selection:text-white relative overflow-hidden flex flex-col">
-        {/* Background Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-teal-500/20 via-cyan-500/20 to-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
-
         <HeaderShell
           onLogoClick={() => router.push("/")}
           center={

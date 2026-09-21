@@ -31,7 +31,6 @@ import ActionsMenu from "@/components/dashboard/ActionsMenu"
 import HeaderActions from "@/components/dashboard/HeaderActions"
 import PublicSidebar from "@/components/dashboard/PublicSidebar"
 import PublicControls from "@/components/dashboard/PublicControls"
-import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 
 export default function Dashboard() {
   const router = useRouter()
@@ -432,7 +431,7 @@ export default function Dashboard() {
             />
           </div>
 
-          {!isLoading && displayDrawings.length === 0 && (
+          {!isLoading && !(mode === "public" && boardLoading) && displayDrawings.length === 0 && (
             <EmptyBoard
               variant={mode === "public" ? "public" : "inbox"}
               shifted={mode === "public"}

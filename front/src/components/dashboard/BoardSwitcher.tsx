@@ -21,7 +21,7 @@ export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcher
         title={t("mode_inbox")}
       >
         <Inbox className="w-4 h-4" />
-        <span className="hidden sm:inline">{t("mode_inbox")}</span>
+        <span className="hidden md:inline">{t("mode_inbox")}</span>
       </button>
       <button
         onClick={onPublic}
@@ -33,7 +33,7 @@ export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcher
         title={t("mode_public")}
       >
         <Globe className="w-4 h-4" />
-        <span className="hidden sm:inline">{t("mode_public")}</span>
+        <span className="hidden md:inline">{t("mode_public")}</span>
       </button>
     </div>
   )
