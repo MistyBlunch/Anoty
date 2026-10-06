@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { LanguageProvider } from '@/context/LanguageContext'
+import { Analytics } from '@vercel/analytics/next'
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   return (
@@ -16,6 +17,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           <link rel="shortcut icon" href="/favicon.ico?v=3" />
         </Head>
         <Component {...pageProps} />
+        <Analytics />
       </LanguageProvider>
     </GoogleOAuthProvider>
   )
