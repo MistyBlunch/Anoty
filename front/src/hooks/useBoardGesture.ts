@@ -79,36 +79,23 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
   const lastMarqueeIdsRef = useRef<string[]>([])
   const hostRef = useRef(host)
   hostRef.current = host
-  const pointerCountRef = useRef(0)
 
-  useEffect(() => {
-    const board = view.boardRef.current
-    if (!board) return
-    const onPointerDown = (e: PointerEvent) => {
-      if (!board.contains(e.target as Node)) return
-      pointerCountRef.current++
-      if (pointerCountRef.current >= 2 && dragRef.current) {
-        const drag = dragRef.current
-        if (drag.kind === "palette" && drag.paletteId) {
-          setPaletteDrag(null)
-          hostRef.current.setDisplayDrawings((prev) => prev.filter((d) => d._id !== drag.paletteId))
-        }
-        dragRef.current = null
-      }
+  // A second finger means pinch-to-zoom: drop whatever single-pointer drag was in progress.
+  const cancelDrag = () => {
+    const drag = dragRef.current
+    if (!drag) return
+    if (drag.kind === "palette" && drag.paletteId) {
+      setPaletteDrag(null)
+      hostRef.current.setDisplayDrawings((prev) => prev.filter((d) => d._id !== drag.paletteId))
     }
-    const onPointerUp = (e: PointerEvent) => {
-      if (!board.contains(e.target as Node)) return
-      pointerCountRef.current = Math.max(0, pointerCountRef.current - 1)
+    if (drag.kind === "marquee") {
+      setMarqueeRect(null)
+      lastMarqueeIdsRef.current = []
     }
-    window.addEventListener("pointerdown", onPointerDown)
-    window.addEventListener("pointerup", onPointerUp)
-    window.addEventListener("pointercancel", onPointerUp)
-    return () => {
-      window.removeEventListener("pointerdown", onPointerDown)
-      window.removeEventListener("pointerup", onPointerUp)
-      window.removeEventListener("pointercancel", onPointerUp)
-    }
-  }, [view.boardRef])
+    setSidebarHover(false)
+    dragRef.current = null
+  }
+  const isMultiTouch = () => view.getPointerCount() > 1
 
   const isOverPalette = (x: number, y: number) => {
     const r = paletteRef.current?.getBoundingClientRect()
@@ -123,6 +110,10 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
       const drag = dragRef.current
       if (!drag) return
       const { view: v, setDisplayDrawings, modeRef } = h()
+      if (v.getPointerCount() > 1) {
+        cancelDrag()
+        return
+      }
       const zoomNow = v.viewRef.current.zoom
 
       if (drag.kind === "marquee") {
@@ -169,7 +160,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
         const dx = e.clientX - drag.startX
         const dy = e.clientY - drag.startY
         if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true
-        v.setPan({ x: drag.origPanX + dx, y: drag.origPanY + dy })
+        v.scheduleView(v.viewRef.current.zoom, { x: drag.origPanX + dx, y: drag.origPanY + dy })
       } else if (drag.kind === "draw" && drag.drawId) {
         const dx = (e.clientX - drag.startX) / zoomNow
         const dy = (e.clientY - drag.startY) / zoomNow
@@ -361,10 +352,13 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
 
     window.addEventListener("pointermove", onPointerMove)
     window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("pointercancel", onPointerUp)
     return () => {
       window.removeEventListener("pointermove", onPointerMove)
       window.removeEventListener("pointerup", onPointerUp)
+      window.removeEventListener("pointercancel", onPointerUp)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const draggedId = dragRef.current?.kind === "draw" ? (dragRef.current.drawId || null) : null
@@ -377,6 +371,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
 
   const handlePanStart = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    if (isMultiTouch()) return
     setSidebarHover(false)
     host.setSelectedIds([])
     host.setConfirmDeleteId(null)
@@ -393,6 +388,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
 
   const handleMarqueeStart = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    if (isMultiTouch()) return
     e.preventDefault()
     setSidebarHover(false)
     host.setSelectedIds([])
@@ -411,6 +407,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
   }
 
   const handleDrawStart = (e: React.PointerEvent, d: Drawing) => {
+    if (isMultiTouch()) return
     if (host.getTool() === "marquee" && !host.getSelectedIds().includes(d._id)) return
     e.stopPropagation()
     if (e.button !== 0) return
@@ -462,6 +459,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
   }
 
   const handleResizeStart = (e: React.PointerEvent, d: Drawing) => {
+    if (isMultiTouch()) return
     if (host.getTool() === "marquee" && !host.getSelectedIds().includes(d._id)) return
     e.stopPropagation()
     if (e.button !== 0) return

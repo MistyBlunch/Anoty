@@ -4,7 +4,7 @@ import { useRouter } from "next/router"
 import Head from "next/head"
 import Image from "next/image"
 import Script from "next/script"
-import { Send, CheckCircle2, ArrowLeft } from "lucide-react"
+import { Send, CheckCircle2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { api } from "@/lib/api"
 import { translations, type Locale } from "@/lib/i18n"
@@ -138,19 +138,12 @@ export default function SendNote({
           right={
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
-              <button
-                onClick={() => router.push("/")}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">{t("send_back")}</span>
-              </button>
             </div>
           }
         />
 
         {/* Content */}
-        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto w-full mx-auto px-3 sm:px-4 py-3 sm:py-4 relative z-10">
+        <main className={`flex-1 min-h-0 flex flex-col w-full mx-auto px-2 sm:px-4 py-2 sm:py-4 relative z-10 ${isSuccess ? "overflow-y-auto" : "overflow-hidden"}`}>
           {isSuccess ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -189,7 +182,7 @@ export default function SendNote({
               </div>
             </motion.div>
           ) : (
-            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-slate-200">
+            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-slate-200 touch-none">
               <ExcalidrawCanvas
                 username={username}
                 onSent={() => setIsSuccess(true)}

@@ -1,3 +1,4 @@
+import { memo } from "react"
 import type { Drawing } from "@/types/drawing"
 import { isTransparent } from "@/lib/board"
 import SvgSafe from "@/components/svg/SvgSafe"
@@ -8,7 +9,7 @@ interface BoardNoteProps {
   pulsing?: boolean
 }
 
-export default function BoardNote({ drawing, selected, pulsing }: BoardNoteProps) {
+function BoardNote({ drawing, selected, pulsing }: BoardNoteProps) {
   return (
     <div
       className={`w-full h-full rounded-xl overflow-hidden ${
@@ -26,3 +27,5 @@ export default function BoardNote({ drawing, selected, pulsing }: BoardNoteProps
     </div>
   )
 }
+
+export default memo(BoardNote)

@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { motion } from "framer-motion"
 import type { Drawing } from "@/types/drawing"
 import BoardNote from "./BoardNote"
@@ -12,7 +13,7 @@ interface NoteCardProps {
   onResizeStart: (e: React.PointerEvent, d: Drawing) => void
 }
 
-export default function NoteCard({
+function NoteCard({
   drawing,
   selected,
   pulsing,
@@ -55,3 +56,5 @@ export default function NoteCard({
     </motion.div>
   )
 }
+
+export default memo(NoteCard)

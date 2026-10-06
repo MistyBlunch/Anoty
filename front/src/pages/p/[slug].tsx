@@ -104,24 +104,31 @@ export default function PublicBoardView() {
     const onPointerMove = (e: PointerEvent) => {
       const drag = dragRef.current
       if (!drag) return
+      if (view.getPointerCount() > 1) {
+        dragRef.current = null
+        return
+      }
       const dx = e.clientX - drag.startX
       const dy = e.clientY - drag.startY
       if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true
-      view.setPan({ x: drag.origPanX + dx, y: drag.origPanY + dy })
+      view.scheduleView(view.viewRef.current.zoom, { x: drag.origPanX + dx, y: drag.origPanY + dy })
     }
     const onPointerUp = () => {
       dragRef.current = null
     }
     window.addEventListener("pointermove", onPointerMove)
     window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("pointercancel", onPointerUp)
     return () => {
       window.removeEventListener("pointermove", onPointerMove)
       window.removeEventListener("pointerup", onPointerUp)
+      window.removeEventListener("pointercancel", onPointerUp)
     }
-  }, [view.setPan])
+  }, [view.scheduleView, view.getPointerCount])
 
   const handlePanStart = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    if (view.getPointerCount() > 1) return
     const { pan } = view.viewRef.current
     dragRef.current = {
       startX: e.clientX,
