@@ -7,6 +7,7 @@ import { createBoardService } from "../services/board.service.js"
 import { authMiddleware } from "../middleware/auth.middleware.js"
 import { AppError } from "../lib/error.js"
 import { wsHub, WS_USER_PREFIX } from "../lib/ws-hub.js"
+import { defaultEmailService } from "../services/email/index.js"
 
 const board = new Hono()
 const boardService = createBoardService({
@@ -15,6 +16,26 @@ const boardService = createBoardService({
   notifier: {
     onNewDrawing: (username) =>
       wsHub.broadcast(`${WS_USER_PREFIX}${username}`, { type: "new-drawing" }),
+    onDrawingCreated: async ({ recipient, note }) => {
+      if (!recipient.email) return
+
+      const appUrl = process.env.APP_URL || "https://anoty.app"
+      const resolvedLocale =
+        recipient.locale === "es" || recipient.locale === "en"
+          ? recipient.locale
+          : (process.env.EMAIL_LOCALE === "es" ? "es" : "en")
+
+      const defaultAuthor = resolvedLocale === "es" ? "Un amigo anónimo" : "An anonymous friend"
+
+      void defaultEmailService.sendNewDrawingNotification({
+        to: recipient.email,
+        recipientName: recipient.name || recipient.username,
+        recipientUsername: recipient.username,
+        authorName: note.authorName || defaultAuthor,
+        boardUrl: `${appUrl}/dashboard`,
+        locale: resolvedLocale,
+      })
+    },
   },
 })
 

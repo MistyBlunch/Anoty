@@ -13,6 +13,7 @@ export interface AuthResult {
     name: string
     email: string
     avatar: string
+    locale?: "es" | "en"
   }
 }
 
@@ -66,6 +67,7 @@ export function createAuthService(
         name: user.name || user.username,
         email: user.email || "",
         avatar: user.avatar || "",
+        locale: user.locale || "en",
       },
     }
   }

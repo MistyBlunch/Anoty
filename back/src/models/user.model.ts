@@ -8,6 +8,7 @@ export interface IUser {
   name?: string;
   avatar?: string;
   username: string;
+  locale?: "es" | "en";
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -43,6 +44,11 @@ const userSchema = new mongoose.Schema<IUser>({
     trim: true,
     lowercase: true,
     minlength: [3, "El nombre de usuario debe tener al menos 3 caracteres"],
+  },
+  locale: {
+    type: String,
+    enum: ["es", "en"],
+    default: "en",
   },
 }, {
   timestamps: true,

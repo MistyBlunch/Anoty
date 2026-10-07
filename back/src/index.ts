@@ -65,6 +65,7 @@ const port = Number(process.env.PORT) || 3000
 
 console.log(`🚀 Server is running on http://localhost:${port}`)
 console.log(`🔑 GOOGLE_CLIENT_ID cargado: ${process.env.GOOGLE_CLIENT_ID ? "SÍ ✅ (" + process.env.GOOGLE_CLIENT_ID.substring(0, 15) + "...)" : "NO ❌"}`)
+console.log(`📧 RESEND_API_KEY cargado: ${process.env.RESEND_API_KEY ? "SÍ ✅" : "NO ❌ (notificaciones por correo desactivadas)"}`)
 
 serve({
   fetch: app.fetch,

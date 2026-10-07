@@ -1,6 +1,7 @@
 "use client"
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { type Locale, translations } from "@/lib/i18n"
+import { api } from "@/lib/api"
 
 const STORAGE_KEY = "anoty_locale"
 const DEFAULT_LOCALE: Locale = "en"
@@ -38,6 +39,16 @@ export function LanguageProvider({
         setLocaleState(stored)
       } else if (initialLocale) {
         setLocaleState(initialLocale)
+      } else {
+        const savedUser = localStorage.getItem("user")
+        if (savedUser) {
+          try {
+            const parsed = JSON.parse(savedUser)
+            if (parsed.locale === "en" || parsed.locale === "es") {
+              setLocaleState(parsed.locale)
+            }
+          } catch {}
+        }
       }
     }
   }, [initialLocale])
@@ -45,6 +56,18 @@ export function LanguageProvider({
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next)
     localStorage.setItem(STORAGE_KEY, next)
+
+    if (typeof window !== "undefined" && localStorage.getItem("token")) {
+      api.patch("/auth/preferences", { locale: next }).catch(() => {})
+      const savedUser = localStorage.getItem("user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          parsed.locale = next
+          localStorage.setItem("user", JSON.stringify(parsed))
+        } catch {}
+      }
+    }
   }, [])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
