@@ -2,18 +2,9 @@ import { useState } from "react"
 import Image from "next/image"
 import { Trash2 } from "lucide-react"
 import SvgSafe from "@/components/svg/SvgSafe"
-import type { AuthenticatedUser } from "@/types/auth"
 import type { Drawing } from "@/types/drawing"
+import type { NotificationsDropdownProps } from "@/types"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface NotificationsDropdownProps {
-  user: AuthenticatedUser
-  newArrivals: Drawing[]
-  open: boolean
-  onToggle: () => void
-  onFocus: (d: Drawing) => void
-  onClear: () => void
-}
 
 export default function NotificationsDropdown({
   user,

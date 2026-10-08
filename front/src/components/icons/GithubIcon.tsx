@@ -1,4 +1,6 @@
-export function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
+import type { GithubIconProps } from "@/types"
+
+export function GithubIcon({ className = "w-4 h-4" }: GithubIconProps) {
   return (
     <svg
       className={className}

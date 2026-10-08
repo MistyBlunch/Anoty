@@ -2,26 +2,17 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { type Locale, translations } from "@/lib/i18n"
 import { api } from "@/lib/api"
+import type { LanguageContextValue, LanguageProviderProps } from "@/types"
 
 const STORAGE_KEY = "anoty_locale"
 const DEFAULT_LOCALE: Locale = "en"
-
-interface LanguageContextValue {
-  locale: Locale
-  setLocale: (locale: Locale) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: (key: string, ...args: any[]) => string
-}
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
 export function LanguageProvider({
   children,
   initialLocale,
-}: {
-  children: React.ReactNode
-  initialLocale?: Locale
-}) {
+}: LanguageProviderProps) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale || DEFAULT_LOCALE)
 
   useEffect(() => {

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { GetServerSideProps } from "next"
 import { useRouter } from "next/router"
 import Head from "next/head"
 import { MessageSquareHeart, Home, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
 import { isNewerUpdatedAt } from "@/lib/realtime"
+import { translations, type Locale } from "@/lib/i18n"
 import type { Drawing } from "@/types/drawing"
 
 import { useZoomPan } from "@/hooks/useZoomPan"
@@ -17,29 +19,152 @@ import ZoomControls from "@/components/board/ZoomControls"
 import HintBar from "@/components/board/HintBar"
 import EmptyBoard from "@/components/board/EmptyBoard"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
+import type { BoardDrag, PublicBoardProps } from "@/types"
 
-interface BoardDrag {
-  startX: number
-  startY: number
-  origPanX: number
-  origPanY: number
-  moved: boolean
+export type { PublicBoardProps }
+
+export const getServerSideProps: GetServerSideProps<PublicBoardProps> = async (context) => {
+  const rawSlug = context.params?.slug
+  const slug = typeof rawSlug === "string" ? rawSlug.toLowerCase() : ""
+  const queryLang = context.query.lang
+  const initialLocale: Locale = queryLang === "es" ? "es" : "en"
+  const dict = translations[initialLocale]
+
+  const host = context.req.headers.host || "anoty.app"
+  const protocol = host.includes("localhost") ? "http" : "https"
+  const canonicalUrl = `${protocol}://${host}/p/${slug}${queryLang === "es" ? "?lang=es" : ""}`
+  const ogImage = `${protocol}://${host}/apple-touch-icon.png`
+
+  if (!slug) {
+    return {
+      props: {
+        slug: "",
+        initialStatus: "notfound",
+        initialTitle: "",
+        initialItems: [],
+        initialUpdatedAt: null,
+        metaTitle: dict.public_notfound_title as string,
+        metaDescription: dict.public_notfound_heading as string,
+        canonicalUrl,
+        ogImage,
+      },
+    }
+  }
+
+  try {
+    const res = await api.get(`/public/${slug}`)
+    if (!res || !res.success) {
+      return {
+        props: {
+          slug,
+          initialStatus: "notfound",
+          initialTitle: "",
+          initialItems: [],
+          initialUpdatedAt: null,
+          metaTitle: dict.public_notfound_title as string,
+          metaDescription: dict.public_notfound_heading as string,
+          canonicalUrl,
+          ogImage,
+        },
+      }
+    }
+
+    const payload = res as unknown as Record<string, unknown>
+    const title = (payload.title as string) || (dict.public_default_title as string)
+    const rawItems = (payload.items as unknown[] | undefined) || []
+    const initialUpdatedAt = (payload.updatedAt as string) || null
+
+    const initialItems: Drawing[] = rawItems.map((raw) => {
+      const it = raw as Record<string, unknown>
+      return {
+        _id: (it.noteId as string) || (it._id as string) || "",
+        content: (it.content as string) || "",
+        authorName: it.authorName as string | undefined,
+        createdAt: (it.createdAt as string) || new Date().toISOString(),
+        x: Number(it.x) || 0,
+        y: Number(it.y) || 0,
+        width: Number(it.width) || 320,
+        height: Number(it.height) || 220,
+        rotation: Number(it.rotation) || 0,
+        z: Number(it.z) || 0,
+        transparent: it.transparent === true,
+      }
+    })
+
+    const count = initialItems.length
+    const countText =
+      initialLocale === "es"
+        ? count === 1
+          ? "1 dibujo anónimo"
+          : `${count} dibujos anónimos`
+        : count === 1
+          ? "1 anonymous drawing"
+          : `${count} anonymous drawings`
+
+    const descFn = dict.public_board_description as (t: string) => string
+    const baseDesc = typeof descFn === "function" ? descFn(title) : `${title} – Anoty`
+    const metaDescription = count > 0 ? `${baseDesc} • ${countText}` : baseDesc
+
+    context.res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=10, stale-while-revalidate=59",
+    )
+
+    return {
+      props: {
+        slug,
+        initialStatus: "ready",
+        initialTitle: title,
+        initialItems,
+        initialUpdatedAt,
+        metaTitle: `${title} – Anoty`,
+        metaDescription,
+        canonicalUrl,
+        ogImage,
+      },
+    }
+  } catch (error) {
+    // Si la llamada al backend falla en SSR, caemos de forma segura a carga en cliente
+    return {
+      props: {
+        slug,
+        initialStatus: "loading",
+        initialTitle: "",
+        initialItems: [],
+        initialUpdatedAt: null,
+        metaTitle: dict.public_loading_title as string,
+        metaDescription: "Cargando tablero interactivo...",
+        canonicalUrl,
+        ogImage,
+      },
+    }
+  }
 }
 
-export default function PublicBoardView() {
+export default function PublicBoardView({
+  slug: initialSlug,
+  initialStatus = "loading",
+  initialTitle = "",
+  initialItems = [],
+  initialUpdatedAt = null,
+  metaTitle,
+  metaDescription,
+  canonicalUrl,
+  ogImage,
+}: PublicBoardProps) {
   const router = useRouter()
-  const slug = (router.query.slug as string) || ""
+  const slug = initialSlug || (router.query.slug as string) || ""
   const { t } = useLanguage()
 
-  const [title, setTitle] = useState("")
-  const [items, setItems] = useState<Drawing[]>([])
-  const [status, setStatus] = useState<"loading" | "ready" | "notfound">("loading")
+  const [title, setTitle] = useState(initialTitle)
+  const [items, setItems] = useState<Drawing[]>(initialItems)
+  const [status, setStatus] = useState<"loading" | "ready" | "notfound">(initialStatus)
 
   const view = useZoomPan({ wheel: status === "ready", initialZoom: 0.8 })
   const { fitToContent } = useFitToContent(view)
 
   const dragRef = useRef<BoardDrag | null>(null)
-  const updatedAtRef = useRef<string | null>(null)
+  const updatedAtRef = useRef<string | null>(initialUpdatedAt)
 
   const loadBoard = useCallback((currentSlug: string) => {
     setStatus("loading")
@@ -58,7 +183,7 @@ export default function PublicBoardView() {
           (rawItems || []).map((raw) => {
             const it = raw as Record<string, unknown>
             return {
-              _id: it.noteId as string,
+              _id: (it.noteId as string) || (it._id as string) || "",
               content: (it.content as string) || "",
               authorName: it.authorName as string | undefined,
               createdAt: (it.createdAt as string) || new Date().toISOString(),
@@ -80,9 +205,11 @@ export default function PublicBoardView() {
 
   useEffect(() => {
     if (!slug) return
-    setStatus("loading")
-    loadBoard(slug)
-  }, [slug, loadBoard])
+    // Si no vino pre-cargado desde SSR o cambió el slug en navegación cliente, cargamos
+    if (slug !== initialSlug || status === "loading") {
+      loadBoard(slug)
+    }
+  }, [slug, initialSlug, status, loadBoard])
 
   useRealtimeBoard({
     slug: slug || null,
@@ -98,7 +225,7 @@ export default function PublicBoardView() {
     if (status !== "ready" || items.length === 0) return
     fitToContent(items)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [status, items.length])
 
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
@@ -139,11 +266,15 @@ export default function PublicBoardView() {
     }
   }
 
+  const dynamicTitle = title ? `${title} – Anoty` : metaTitle || t("public_default_title")
+  const dynamicDescription = title ? t("public_board_description", title) : metaDescription
+
   if (status === "loading") {
     return (
       <>
         <Head>
-          <title>{t("public_loading_title")}</title>
+          <title>{metaTitle || t("public_loading_title")}</title>
+          <meta name="description" content={metaDescription || "Cargando tablero..."} />
         </Head>
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <div className="text-center">
@@ -159,7 +290,8 @@ export default function PublicBoardView() {
     return (
       <>
         <Head>
-          <title>{t("public_notfound_title")}</title>
+          <title>{metaTitle || t("public_notfound_title")}</title>
+          <meta name="description" content={metaDescription || t("public_notfound_heading")} />
         </Head>
         <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">
           <HeaderShell
@@ -194,8 +326,23 @@ export default function PublicBoardView() {
   return (
     <>
       <Head>
-        <title>{`${title} – Anoty`}</title>
-        <meta name="description" content={t("public_board_description", title)} />
+        <title>{dynamicTitle}</title>
+        <meta name="description" content={dynamicDescription} />
+
+        {/* Open Graph / Social Sharing (WhatsApp, Twitter/X, Discord, Telegram, Facebook) */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={dynamicTitle} />
+        <meta property="og:description" content={dynamicDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:site_name" content="Anoty" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:url" content={canonicalUrl} />
+        <meta name="twitter:title" content={dynamicTitle} />
+        <meta name="twitter:description" content={dynamicDescription} />
+        <meta name="twitter:image" content={ogImage} />
       </Head>
 
       <div className="min-h-screen bg-white text-slate-800 selection:bg-teal-500 selection:text-white flex flex-col">

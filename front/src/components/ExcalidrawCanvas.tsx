@@ -4,11 +4,7 @@ import dynamic from 'next/dynamic'
 import '@excalidraw/excalidraw/index.css'
 import { api } from '@/lib/api'
 import { useLanguage } from '@/context/LanguageContext'
-
-interface ExcalidrawCanvasProps {
-  username?: string
-  onSent?: () => void
-}
+import type { ExcalidrawCanvasProps } from '@/types'
 
 const ExcalidrawInner = dynamic(
   async () => {

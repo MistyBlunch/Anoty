@@ -1,17 +1,7 @@
 import { memo } from "react"
 import { motion } from "framer-motion"
-import type { Drawing } from "@/types/drawing"
 import BoardNote from "./BoardNote"
-
-interface NoteCardProps {
-  drawing: Drawing
-  selected: boolean
-  pulsing: boolean
-  scale: number
-  handTool?: boolean
-  onDrawStart: (e: React.PointerEvent, d: Drawing) => void
-  onResizeStart: (e: React.PointerEvent, d: Drawing) => void
-}
+import type { NoteCardProps } from "@/types"
 
 function NoteCard({
   drawing,

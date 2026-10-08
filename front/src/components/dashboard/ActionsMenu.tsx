@@ -6,23 +6,9 @@ import {
   Trash2,
   GitBranch,
 } from "lucide-react"
-import { isTransparent, type Drawing, type MenuPosition } from "@/lib/board"
+import { isTransparent, type Drawing } from "@/lib/board"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface ActionsMenuProps {
-  innerRef: React.Ref<HTMLDivElement>
-  drawings: Drawing[]
-  mode: "inbox" | "public"
-  confirmDeleteVisible: boolean
-  pos: MenuPosition
-  onExportPng: () => void
-  onToggleBackground: () => void
-  onMoveLayer: (dir: "front" | "back") => void
-  onRequestDelete: () => void
-  onConfirmDelete: () => void
-  onCancelDelete: () => void
-  onRemovePublic: () => void
-}
+import type { ActionsMenuProps } from "@/types"
 
 export default function ActionsMenu({
   innerRef,

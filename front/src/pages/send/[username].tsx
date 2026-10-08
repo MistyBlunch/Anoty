@@ -13,14 +13,9 @@ import HeaderShell from "@/components/layout/HeaderShell"
 import { useLanguage } from "@/context/LanguageContext"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import type { RecipientUser } from "@/types/auth"
+import type { SendNoteProps } from "@/types"
 
-interface SendNoteProps {
-  username: string
-  initialLocale: Locale
-  metaTitle: string
-  metaDescription: string
-  canonicalUrl: string
-}
+export type { SendNoteProps }
 
 export const getServerSideProps: GetServerSideProps<SendNoteProps> = async (context) => {
   const rawUsername = context.params?.username
@@ -38,6 +33,11 @@ export const getServerSideProps: GetServerSideProps<SendNoteProps> = async (cont
   const host = context.req.headers.host || "anoty.app"
   const protocol = host.includes("localhost") ? "http" : "https"
   const canonicalUrl = `${protocol}://${host}/send/${username}${queryLang === "es" ? "?lang=es" : ""}`
+
+  context.res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=60, stale-while-revalidate=300",
+  )
 
   return {
     props: {

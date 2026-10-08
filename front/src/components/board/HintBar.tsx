@@ -1,8 +1,5 @@
 import { Hand } from "lucide-react"
-
-interface HintBarProps {
-  text: string
-}
+import type { HintBarProps } from "@/types"
 
 export default function HintBar({ text }: HintBarProps) {
   return (

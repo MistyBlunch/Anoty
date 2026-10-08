@@ -78,33 +78,6 @@ noty/
 
 ---
 
-### 🔌 Arquitectura Desacoplada del Servicio de Correo
-
-El sistema de notificaciones por correo sigue el patrón de **Puertos y Adaptadores (Clean Architecture)**:
-
-```
-[BoardService] (Lógica de negocio pura)
-       │
-       ▼ (Usa Notifier sin conocer detalles de red)
-[BoardRoutes] (Composition)
-       │
-       ▼ (Usa la interfaz abstracta EmailService)
-[createEmailService] ──▶ (Archivo único de configuración: back/src/services/email/index.ts)
-       │
-       ▼ (Implementación actual)
-[ResendEmailService] ──▶ [new-drawing.template.ts] (Plantilla HTML bilingüe pura)
-```
-
-#### ¿Cómo cambiar de proveedor de correo?
-Si deseas cambiar de **Resend** a **Nodemailer (SMTP/Gmail)**, **SendGrid**, **Brevo** o **AWS SES**, **solo necesitas modificar 1 archivo**:
-
-1. Crea tu adaptador (ej. `nodemailer-email.service.ts`) implementando la interfaz `EmailService` definida en [`email.types.ts`](back/src/services/email/email.types.ts).
-2. En [`back/src/services/email/index.ts`](back/src/services/email/index.ts), cambia la instancia retornada en `createEmailService()`.
-
-**Ningún otro archivo** (ni rutas, ni lógica de negocio, ni plantillas, ni tests del tablero) requiere modificaciones.
-
----
-
 ## 🛠️ Stack Tecnológico / Tech Stack
 
 | Área | Tecnologías |

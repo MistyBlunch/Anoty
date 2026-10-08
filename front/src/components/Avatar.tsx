@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react'
-
-interface AvatarProps {
-  src: string
-  alt?: string
-  className?: string
-  placeholder?: string
-}
+import type { AvatarProps } from '@/types'
 
 export default function Avatar({ src, alt = 'Avatar', className = '', placeholder }: AvatarProps) {
   const [imgUrl, setImgUrl] = useState<string | null>(null)

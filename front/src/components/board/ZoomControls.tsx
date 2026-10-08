@@ -1,9 +1,5 @@
 import { ZoomIn, ZoomOut } from "lucide-react"
-
-interface ZoomControlsProps {
-  zoom: number
-  onZoom: (factor: number) => void
-}
+import type { ZoomControlsProps } from "@/types"
 
 export default function ZoomControls({ zoom, onZoom }: ZoomControlsProps) {
   return (

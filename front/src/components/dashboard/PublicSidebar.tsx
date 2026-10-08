@@ -1,23 +1,8 @@
 import { Settings, Palette, Save, Check, RefreshCw, Plus, X } from "lucide-react"
 import SvgSafe from "@/components/svg/SvgSafe"
 import type { Drawing } from "@/types/drawing"
-import type { PaletteDrag } from "@/hooks/useBoardGesture"
+import type { PublicSidebarProps } from "@/types"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface PublicSidebarProps {
-  innerRef: React.Ref<HTMLElement>
-  hovered: boolean
-  title: string
-  onTitleChange: (value: string) => void
-  paletteDrawings: Drawing[]
-  onPalettePointerDown: (e: React.PointerEvent, d: Drawing) => void
-  paletteDrag: PaletteDrag | null
-  open: boolean
-  onToggle: () => void
-  saving: boolean
-  savedFeed: boolean
-  onSave: () => void
-}
 
 export default function PublicSidebar({
   innerRef,

@@ -1,11 +1,6 @@
 import { Inbox, Globe } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface BoardSwitcherProps {
-  mode: "inbox" | "public"
-  onInbox: () => void
-  onPublic: () => void
-}
+import type { BoardSwitcherProps } from "@/types"
 
 export default function BoardSwitcher({ mode, onInbox, onPublic }: BoardSwitcherProps) {
   const { t } = useLanguage()

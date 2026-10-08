@@ -1,8 +1,5 @@
 import { MessageSquareHeart } from "lucide-react"
-
-interface LogoProps {
-  onClick?: () => void
-}
+import type { LogoProps } from "@/types"
 
 export default function Logo({ onClick }: LogoProps) {
   return (

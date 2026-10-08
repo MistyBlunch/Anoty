@@ -1,16 +1,6 @@
 import { MousePointer2, Hand, BoxSelect, Undo2, Redo2, ZoomIn, ZoomOut } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface BoardControlsProps {
-  tool: "select" | "hand" | "marquee"
-  canUndo: boolean
-  canRedo: boolean
-  zoom: number
-  onToolChange: (tool: "select" | "hand" | "marquee") => void
-  onUndo: () => void
-  onRedo: () => void
-  onZoom: (factor: number) => void
-}
+import type { BoardControlsProps } from "@/types"
 
 export default function BoardControls({
   tool,

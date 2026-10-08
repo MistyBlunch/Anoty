@@ -1,11 +1,5 @@
-import type { ReactNode } from "react"
 import Logo from "./Logo"
-
-interface HeaderShellProps {
-  onLogoClick?: () => void
-  center?: ReactNode
-  right?: ReactNode
-}
+import type { HeaderShellProps } from "@/types"
 
 export default function HeaderShell({ onLogoClick, center, right }: HeaderShellProps) {
   return (

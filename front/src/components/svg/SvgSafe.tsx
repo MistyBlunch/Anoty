@@ -1,10 +1,6 @@
 import { memo, useMemo } from "react"
 import { svgSafeHtml } from "@/lib/svg"
-
-interface SvgSafeProps {
-  svg: string
-  className?: string
-}
+import type { SvgSafeProps } from "@/types"
 
 function SvgSafe({ svg, className }: SvgSafeProps) {
   // Sanitizing large Excalidraw SVGs is expensive; only redo it when the content changes.

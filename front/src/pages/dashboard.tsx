@@ -28,9 +28,13 @@ import BoardControls from "@/components/board/BoardControls"
 import EmptyBoard from "@/components/board/EmptyBoard"
 import MarqueeOverlay from "@/components/board/MarqueeOverlay"
 import ActionsMenu from "@/components/dashboard/ActionsMenu"
+import dynamic from "next/dynamic"
 import HeaderActions from "@/components/dashboard/HeaderActions"
-import PublicSidebar from "@/components/dashboard/PublicSidebar"
 import PublicControls from "@/components/dashboard/PublicControls"
+
+const PublicSidebar = dynamic(() => import("@/components/dashboard/PublicSidebar"), {
+  ssr: false,
+})
 
 export default function Dashboard() {
   const router = useRouter()

@@ -4,21 +4,7 @@ import type { Drawing } from "@/types/drawing"
 import type { Vector2 } from "@/lib/board"
 import NoteCard from "./NoteCard"
 import BoardNote from "./BoardNote"
-
-interface NotesCanvasProps {
-  items: Drawing[]
-  pan: Vector2
-  zoom: number
-  zIndex?: number
-  interactive?: boolean
-  handTool?: boolean
-  animated?: boolean
-  selectedIds?: string[]
-  pulseId?: string | null
-  scaleOf?: (d: Drawing) => number
-  onDrawStart?: (e: React.PointerEvent, d: Drawing) => void
-  onResizeStart?: (e: React.PointerEvent, d: Drawing) => void
-}
+import type { NotesCanvasProps } from "@/types"
 
 export default function NotesCanvas({
   items,

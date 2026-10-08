@@ -1,12 +1,6 @@
 import { Sparkles, MessageSquareHeart, ExternalLink } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface EmptyBoardProps {
-  variant: "inbox" | "public" | "viewer"
-  shifted?: boolean
-  copied?: boolean
-  onCopyShare?: () => void
-}
+import type { EmptyBoardProps } from "@/types"
 
 export default function EmptyBoard({ variant, shifted, copied, onCopyShare }: EmptyBoardProps) {
   const { t } = useLanguage()

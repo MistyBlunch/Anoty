@@ -1,23 +1,11 @@
 import { LogOut } from "lucide-react"
-import type { Drawing } from "@/lib/board"
+import type { Drawing } from "@/types/drawing"
 import type { AuthenticatedUser } from "@/types/auth"
+import type { HeaderActionsProps } from "@/types"
 import { useLanguage } from "@/context/LanguageContext"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import NotificationsDropdown from "./NotificationsDropdown"
 import BoardSwitcher from "./BoardSwitcher"
-
-interface HeaderActionsProps {
-  user: AuthenticatedUser
-  mode: "inbox" | "public"
-  onInbox: () => void
-  onPublic: () => void
-  newArrivals: Drawing[]
-  notificationsOpen: boolean
-  onToggleNotifications: () => void
-  onFocusDrawing: (d: Drawing) => void
-  onClearNotifications: () => void
-  onLogout: () => void
-}
 
 export default function HeaderActions({
   user,

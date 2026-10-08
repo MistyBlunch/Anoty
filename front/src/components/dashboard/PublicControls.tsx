@@ -1,12 +1,6 @@
 import { Check, Share2, Globe } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
-
-interface PublicControlsProps {
-  copied: boolean
-  isPublished: boolean
-  onCopy: () => void
-  onToggle: () => void
-}
+import type { PublicControlsProps } from "@/types"
 
 export default function PublicControls({ copied, isPublished, onCopy, onToggle }: PublicControlsProps) {
   const { t } = useLanguage()
