@@ -2,16 +2,14 @@ FROM node:22-slim AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json yarn.lock ./
 
-RUN npm ci
-
-RUN npm install --no-save --package-lock=false "@typescript/typescript-linux-x64@$(node -p "require('./node_modules/typescript/package.json').version")"
+RUN yarn install --frozen-lockfile
 
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npm run build
+RUN yarn build
 
 FROM node:22-slim
 
@@ -19,9 +17,9 @@ WORKDIR /app
 
 RUN useradd --system --create-home --shell /usr/sbin/nologin appuser
 
-COPY package.json package-lock.json ./
+COPY package.json yarn.lock ./
 
-RUN npm ci --omit=dev && npm cache clean --force
+RUN yarn install --production --frozen-lockfile && yarn cache clean
 
 COPY --from=build /app/dist ./dist
 
