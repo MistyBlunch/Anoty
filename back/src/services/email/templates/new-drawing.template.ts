@@ -21,10 +21,10 @@ interface TemplateStrings {
 
 const TRANSLATIONS: Record<EmailLocale, TemplateStrings> = {
   en: {
-    subject: (username) => `🎨 New drawing on your board, @${username}!`,
+    subject: (username) => `🎨 New noty on your board, @${username}!`,
     badge: "New activity!",
     greeting: (name) => `Hi, ${name}!`,
-    message: "Someone just left a new creation on your Anoty board.",
+    message: "Someone just left a new noty on your Anoty board.",
     authorLabel: "Author",
     defaultAuthor: "An anonymous friend",
     cta: "View drawing on my board &rarr;",
@@ -40,14 +40,14 @@ View it here: ${boardUrl}
 Anoty - Your space for notes and drawings`,
   },
   es: {
-    subject: (username) => `🎨 ¡Nuevo dibujo en tu board, @${username}!`,
+    subject: (username) => `🎨 ¡Nuevo noty en tu board, @${username}!`,
     badge: "¡Nueva actividad!",
     greeting: (name) => `¡Hola, ${name}!`,
-    message: "Alguien acaba de dejar una nueva creación en tu board de Anoty.",
+    message: "Alguien acaba de dejar un noty en tu board de Anoty.",
     authorLabel: "Autor",
     defaultAuthor: "Un amigo anónimo",
     cta: "Ver dibujo en mi board &rarr;",
-    footer: (username) => `Recibiste este correo porque estás registrado en Anoty con @${username}.`,
+    footer: (username) => `Recibiste este correo porque tienes un board en Anoty como @${username}.`,
     copyright: (year) => `&copy; ${year} Anoty. Todos los derechos reservados.`,
     textBody: (name, author, boardUrl) => `¡Hola, ${name}!
 
@@ -68,8 +68,19 @@ export function renderNewDrawingEmail(payload: NewDrawingEmailPayload): EmailRen
   const strings = TRANSLATIONS[activeLocale]
 
   const displayName = recipientName || recipientUsername || (activeLocale === "es" ? "amigo" : "friend")
-  const senderDisplayName =
-    authorName && authorName.trim().length > 0 ? authorName : strings.defaultAuthor
+
+  const isAnonymousAuthor =
+    !authorName ||
+    [
+      "amigo anónimo",
+      "amigo anonimo",
+      "un amigo anónimo",
+      "un amigo anonimo",
+      "anonymous friend",
+      "an anonymous friend",
+    ].includes(authorName.trim().toLowerCase())
+
+  const senderDisplayName = isAnonymousAuthor ? strings.defaultAuthor : authorName
 
   const subject = strings.subject(recipientUsername)
   const text = strings.textBody(displayName, senderDisplayName, boardUrl)

@@ -33,7 +33,7 @@ const publicBoardItemSchema = new mongoose.Schema<IPublicBoardItem>(
   {
     noteId: { type: String, required: true },
     content: { type: String, required: true },
-    authorName: { type: String, default: "Amigo Anónimo" },
+    authorName: { type: String, default: "Anonymous friend" },
     authorAvatar: { type: String },
     createdAt: { type: Date },
     x: { type: Number, default: 0 },

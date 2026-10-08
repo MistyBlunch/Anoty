@@ -25,13 +25,26 @@ const boardService = createBoardService({
           ? recipient.locale
           : (process.env.EMAIL_LOCALE === "es" ? "es" : "en")
 
-      const defaultAuthor = resolvedLocale === "es" ? "Un amigo anónimo" : "An anonymous friend"
+      const isAnonymous =
+        !note.authorName ||
+        [
+          "amigo anónimo",
+          "amigo anonimo",
+          "un amigo anónimo",
+          "un amigo anonimo",
+          "anonymous friend",
+          "an anonymous friend",
+        ].includes(note.authorName.trim().toLowerCase())
+
+      const authorName = isAnonymous
+        ? (resolvedLocale === "es" ? "Un amigo anónimo" : "An anonymous friend")
+        : note.authorName
 
       void defaultEmailService.sendNewDrawingNotification({
         to: recipient.email,
         recipientName: recipient.name || recipient.username,
         recipientUsername: recipient.username,
-        authorName: note.authorName || defaultAuthor,
+        authorName,
         boardUrl: `${appUrl}/dashboard`,
         locale: resolvedLocale,
       })

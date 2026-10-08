@@ -50,9 +50,7 @@ export default function ActionsMenu({
         ? t("actions_bg_remove")
         : t("actions_bg_add")
   const bgTitle =
-    count > 1
-      ? t("actions_bg_title_multi")
-      : t("actions_bg_title_single")
+    count > 1 ? t("actions_bg_title_multi") : t("actions_bg_title_single")
 
   return (
     <div
@@ -110,14 +108,46 @@ export default function ActionsMenu({
         </button>
         {mode === "inbox" ? (
           confirmDeleteVisible ? (
-            <div className="col-span-2 flex items-center justify-center gap-1 bg-red-500/5 border border-red-500/20 rounded-lg px-2 py-2">
+            <div className="col-span-2 flex items-center justify-between gap-1 bg-red-500/5 border border-red-500/20 rounded-lg px-2 py-2">
               <span className="text-xs font-semibold text-red-600">
                 {count > 1
                   ? t("actions_confirm_delete_multi", count)
                   : t("actions_confirm_delete_single")}
               </span>
+              <div className="flex items-center gap-2 ml-2">
+                <button
+                  onClick={onConfirmDelete}
+                  className="text-xs font-bold bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  {t("actions_confirm")}
+                </button>
+                <button
+                  onClick={onCancelDelete}
+                  className="text-xs font-semibold text-slate-600 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  {t("actions_cancel")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={onRequestDelete}
+              className="flex items-center justify-center gap-1 text-xs font-semibold text-red-600 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t("actions_delete")}
+            </button>
+          )
+        ) : confirmDeleteVisible ? (
+          <div className="col-span-2 flex items-center justify-between gap-1 bg-red-500/5 border border-red-500/20 rounded-lg px-2 py-2">
+            <span className="text-xs font-semibold text-red-600">
+              {count > 1
+                ? t("actions_confirm_delete_multi", count)
+                : t("actions_confirm_delete_single")}
+            </span>
+            <div className="flex items-center gap-2 ml-2">
               <button
-                onClick={onConfirmDelete}
+                onClick={onRemovePublic}
                 className="text-xs font-bold bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
               >
                 {t("actions_confirm")}
@@ -129,18 +159,10 @@ export default function ActionsMenu({
                 {t("actions_cancel")}
               </button>
             </div>
-          ) : (
-            <button
-              onClick={onRequestDelete}
-              className="flex items-center justify-center gap-1 text-xs font-semibold text-red-600 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2 py-2 rounded-lg transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              {t("actions_delete")}
-            </button>
-          )
+          </div>
         ) : (
           <button
-            onClick={onRemovePublic}
+            onClick={onRequestDelete}
             className="flex items-center justify-center gap-1 text-xs font-semibold text-red-600 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2 py-2 rounded-lg transition-colors cursor-pointer"
           >
             <GitBranch className="w-4 h-4" />

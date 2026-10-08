@@ -12,7 +12,7 @@ describe("renderNewDrawingEmail", () => {
       boardUrl: "https://anoty.app/dashboard",
     })
 
-    expect(output.subject).toContain("New drawing on your board, @emma!")
+    expect(output.subject).toContain("New noty on your board, @emma!")
     expect(output.text).toContain("Lucas")
     expect(output.text).toContain("https://anoty.app/dashboard")
     expect(output.html).toContain("Hi, Emma!")
@@ -32,6 +32,20 @@ describe("renderNewDrawingEmail", () => {
     expect(output.html).toContain("An anonymous friend")
   })
 
+  it("traduce 'Amigo Anónimo' a 'An anonymous friend' si el correo es en inglés", () => {
+    const output = renderNewDrawingEmail({
+      to: "emma@example.com",
+      recipientName: "Emma",
+      recipientUsername: "emma",
+      authorName: "Amigo Anónimo",
+      boardUrl: "https://anoty.app/dashboard",
+    })
+
+    expect(output.text).toContain("An anonymous friend")
+    expect(output.html).toContain("An anonymous friend")
+    expect(output.text).not.toContain("Amigo Anónimo")
+  })
+
   it("genera la plantilla en español cuando locale es 'es'", () => {
     const output = renderNewDrawingEmail({
       to: "emma@example.com",
@@ -42,7 +56,7 @@ describe("renderNewDrawingEmail", () => {
       locale: "es",
     })
 
-    expect(output.subject).toContain("¡Nuevo dibujo en tu board, @emma!")
+    expect(output.subject).toContain("¡Nuevo noty en tu board, @emma!")
     expect(output.html).toContain("¡Hola, Emma!")
     expect(output.html).toContain("Ver dibujo en mi board")
     expect(output.text).toContain("te ha dejado un nuevo dibujo")
