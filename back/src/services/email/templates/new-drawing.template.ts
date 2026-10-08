@@ -40,18 +40,18 @@ View it here: ${boardUrl}
 Anoty - Your space for notes and drawings`,
   },
   es: {
-    subject: (username) => `🎨 ¡Nuevo noty en tu board, @${username}!`,
+    subject: (username) => `🎨 ¡Nuevo noty en tu tablero, @${username}!`,
     badge: "¡Nueva actividad!",
     greeting: (name) => `¡Hola, ${name}!`,
-    message: "Alguien acaba de dejar un noty en tu board de Anoty.",
+    message: "Alguien acaba de dejar un noty en tu tablero de Anoty.",
     authorLabel: "Autor",
     defaultAuthor: "Un amigo anónimo",
-    cta: "Ver dibujo en mi board &rarr;",
-    footer: (username) => `Recibiste este correo porque tienes un board en Anoty como @${username}.`,
+    cta: "Ver dibujo en mi tablero &rarr;",
+    footer: (username) => `Recibiste este correo porque tienes un tablero en Anoty como @${username}.`,
     copyright: (year) => `&copy; ${year} Anoty. Todos los derechos reservados.`,
     textBody: (name, author, boardUrl) => `¡Hola, ${name}!
 
-${author} te ha dejado un nuevo dibujo en tu board de Anoty.
+${author} te ha dejado un nuevo dibujo en tu tablero de Anoty.
 
 Puedes verlo aquí: ${boardUrl}
 

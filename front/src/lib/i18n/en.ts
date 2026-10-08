@@ -2,13 +2,13 @@ const en = {
   // ─── Meta / SEO ───────────────────────────────────────────────────────────
   home_title: "Anoty – Anonymous messages and drawings for your friends",
   home_description:
-    "Create your private wall with Google and receive anonymous messages and drawings from your friends. Only you can see them.",
-  dashboard_title: "My Private Wall – Anoty",
+    "Create your private board with Google and receive anonymous messages and drawings from your friends. Only you can see them.",
+  dashboard_title: "My Private Board – Anoty",
   dashboard_description: "Your private board of anonymous drawings.",
   send_title: (username: string) => `Send an anonymous note to @${username} – Anoty`,
   send_description: (username: string) => `Send an anonymous message or drawing to @${username}. Only they can see it.`,
-  public_loading_title: "Loading wall... – Anoty",
-  public_notfound_title: "Wall not found – Anoty",
+  public_loading_title: "Loading board... – Anoty",
+  public_notfound_title: "Board not found – Anoty",
   public_board_description: (title: string) => `Public board of anonymous drawings: ${title}`,
 
   // ─── Auth / Nav ───────────────────────────────────────────────────────────
@@ -53,8 +53,8 @@ const en = {
   footer_tagline: "Anonymous interactive drawing boards.",
 
   // ─── Dashboard ────────────────────────────────────────────────────────────
-  loading_public_board: "Loading your public wall...",
-  loading_inbox: "Loading your wall...",
+  loading_public_board: "Loading your public board...",
+  loading_inbox: "Loading your board...",
   copied: "Copied!",
   copy_share_link: "Copy link to share",
   delete_drawing_error: "Error deleting a drawing",
@@ -62,7 +62,7 @@ const en = {
 
   // ─── Board modes ──────────────────────────────────────────────────────────
   mode_inbox: "My anotys",
-  mode_public: "Public wall",
+  mode_public: "Public board",
 
   // ─── BoardControls tooltips ───────────────────────────────────────────────
   tool_select: "Select (V)",
@@ -83,13 +83,13 @@ const en = {
   hint_viewer: "Hold and drag to move • Zoom with wheel or pinch",
 
   // ─── EmptyBoard ───────────────────────────────────────────────────────────
-  empty_inbox_title: "Your wall is still empty",
+  empty_inbox_title: "Your board is still empty",
   empty_inbox_description:
     "Share your link so your friends can send you anonymous drawings. They arrive directly on this board and you can move them as you like.",
-  empty_public_title: "Your public wall is empty",
+  empty_public_title: "Your public board is empty",
   empty_public_description:
-    "Drag your drawings here from the left panel to create your wall visible to anyone on the Internet.",
-  empty_viewer_title: "This wall is empty",
+    "Drag your drawings here from the left panel to create your board visible to anyone on the Internet.",
+  empty_viewer_title: "This board is empty",
   empty_viewer_description: "The owner hasn't placed any drawings here yet.",
   copy_my_link: "Copy my personal link",
 
@@ -107,7 +107,7 @@ const en = {
   actions_confirm_delete_single: "Delete drawing?",
   actions_confirm: "Confirm",
   actions_cancel: "Cancel",
-  actions_remove_from_wall: "Remove from wall",
+  actions_remove_from_wall: "Remove from board",
   actions_move_front_title: "Bring selection to front",
   actions_move_back_title: "Send selection to back",
   actions_download_title: "Download as image",
@@ -124,32 +124,32 @@ const en = {
 
   // ─── PublicControls ───────────────────────────────────────────────────────
   public_copy_link: "Copy public link",
-  public_publish: "Publish",
-  public_hide: "Hide",
-  public_visible_title: "Wall visible publicly",
-  public_hidden_title: "Wall hidden (only you can see it)",
+  public_publish: "Publish board",
+  public_hide: "Hide board",
+  public_visible_title: "Board visible publicly",
+  public_hidden_title: "Board hidden (only you can see it)",
 
   // ─── PublicSidebar ───────────────────────────────────────────────────────
   sidebar_drop_to_remove: "Drop to remove",
   sidebar_settings: "Settings",
-  sidebar_wall_name: "Your wall name",
-  sidebar_wall_placeholder: "My Public Wall",
+  sidebar_wall_name: "Your board name",
+  sidebar_wall_placeholder: "My Public Board",
   sidebar_your_drawings: "Your drawings",
-  sidebar_drag_hint: "Tap and drag one to the wall",
+  sidebar_drag_hint: "Tap and drag one to the board",
   sidebar_no_drawings: "You have no unplaced drawings.",
-  sidebar_drag_to_wall: "Drag to wall",
+  sidebar_drag_to_wall: "Drag to board",
   sidebar_close_panel: "Close panel",
   sidebar_add_drawings: "Add drawings",
   sidebar_saving: "Saving...",
   sidebar_saved: "Saved!",
-  sidebar_save_wall: "Save wall",
+  sidebar_save_wall: "Save board",
 
   // ─── PublicBoardView ─────────────────────────────────────────────────────
-  public_loading_text: "Loading public wall...",
-  public_notfound_heading: "This wall doesn't exist or is hidden",
+  public_loading_text: "Loading public board...",
+  public_notfound_heading: "This board doesn't exist or is hidden",
   public_notfound_description: "The link may be misspelled or the owner unpublished it.",
   public_notfound_back: "Back to Anoty",
-  public_default_title: "Public Wall",
+  public_default_title: "Public Board",
 
   // ─── SendNote ─────────────────────────────────────────────────────────────
   send_header_title: (username: string) => `Send a note to @${username}`,
@@ -157,9 +157,9 @@ const en = {
   send_back: "Back to home",
   send_success_heading: "Drawing sent successfully! 🎉",
   send_success_body: (username: string) =>
-    `Your drawing was saved anonymously on the private wall of @${username}.`,
+    `Your drawing was saved anonymously on the private board of @${username}.`,
   send_another: "Draw another note",
-  send_create_wall: "Create my own wall",
+  send_create_wall: "Create my own board",
   send_button: (username: string) => `Send to @${username}`,
   send_sending: "Sending...",
   send_error_default: "Could not send the drawing",

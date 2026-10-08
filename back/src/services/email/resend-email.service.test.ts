@@ -56,9 +56,9 @@ describe("renderNewDrawingEmail", () => {
       locale: "es",
     })
 
-    expect(output.subject).toContain("¡Nuevo noty en tu board, @emma!")
+    expect(output.subject).toContain("¡Nuevo noty en tu tablero, @emma!")
     expect(output.html).toContain("¡Hola, Emma!")
-    expect(output.html).toContain("Ver dibujo en mi board")
+    expect(output.html).toContain("Ver dibujo en mi tablero")
     expect(output.text).toContain("te ha dejado un nuevo dibujo")
   })
 

@@ -28,7 +28,7 @@ interface UsePublicBoardOutput {
   copyPublicLink: () => Promise<void>
 }
 
-const titleFrom = (b?: unknown) => ((b as Record<string, unknown>)?.draftTitle as string) || ((b as Record<string, unknown>)?.title as string) || "Mi Muro Público"
+const titleFrom = (b?: unknown) => ((b as Record<string, unknown>)?.draftTitle as string) || ((b as Record<string, unknown>)?.title as string) || "Mi Tablero Público"
 
 const DRAFT_FLAG_PREFIX = "anoty::draft::"
 
@@ -86,7 +86,7 @@ export function usePublicBoard({
           setBoard({
             _id: b._id as string,
             slug: b.slug as string,
-            title: (b.title as string) || "Mi Muro Público",
+            title: (b.title as string) || "Mi Tablero Público",
             isPublished: (b.isPublished as boolean) ?? true,
             items: normalizeBoardItems(draftSrc || []),
             updatedAt: (b.updatedAt as string) || undefined,
@@ -94,7 +94,7 @@ export function usePublicBoard({
           setBoardTitle(titleFrom(b))
         }
       } catch (error) {
-        console.error("Error al cargar el muro público:", error)
+        console.error("Error al cargar el tablero público:", error)
       } finally {
         setBoardLoading(false)
       }
@@ -116,7 +116,7 @@ export function usePublicBoard({
   const savePublicBoard = useCallback(async () => {
     const b = pubBoardRef.current
     if (!b) return
-    const title = boardTitle.trim() || "Mi Muro Público"
+    const title = boardTitle.trim() || "Mi Tablero Público"
     setSavingBoard(true)
     try {
       const data = await api.patch(`/public-boards/${b._id}`, {

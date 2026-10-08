@@ -73,7 +73,7 @@ export function createPublicBoardService(deps: {
     const board = await boardRepo.create({
       ownerUsername: username,
       slug: username,
-      title: title || "Mi Muro Público",
+      title: title || "Mi Tablero Público",
       isPublished: true,
       items: [],
     })
@@ -84,7 +84,7 @@ export function createPublicBoardService(deps: {
   const updateBoard = async (boardId: string, updates: UpdateBoardInput) => {
     const board = await boardRepo.findById(boardId)
     if (!board) {
-      throw new AppError(404, "Board público no encontrado")
+      throw new AppError(404, "Tablero público no encontrado")
     }
 
     const publishedFieldsChanged =
@@ -113,15 +113,15 @@ export function createPublicBoardService(deps: {
   const deleteBoard = async (boardId: string) => {
     const deleted = await boardRepo.deleteById(boardId)
     if (!deleted) {
-      throw new AppError(404, "Board público no encontrado")
+      throw new AppError(404, "Tablero público no encontrado")
     }
-    return { success: true, message: "Board público eliminado" }
+    return { success: true, message: "Tablero público eliminado" }
   }
 
   const getPublicBySlug = async (slug: string) => {
     const board = await boardRepo.findBySlugOrLegacy(slug)
     if (!board || !board.isPublished) {
-      throw new AppError(404, "Muro público no encontrado")
+      throw new AppError(404, "Tablero público no encontrado")
     }
 
     return {

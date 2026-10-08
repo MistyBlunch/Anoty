@@ -107,7 +107,7 @@ export function createBoardService(deps: {
 
     return {
       success: true,
-      message: `¡Tu nota anónima fue enviada con éxito al muro de @${username}! 🎉`,
+      message: `¡Tu nota anónima fue enviada con éxito al tablero de @${username}! 🎉`,
       recipient: {
         username: user.username,
         name: user.name || user.username,

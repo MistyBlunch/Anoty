@@ -19,7 +19,7 @@ export function useRealtimeNotifications(
           if (event.type === "new-drawing") onNewDataRef.current()
         },
         onOpen: () => {
-          // Catch-up: ante una conexión o reconexión se sincroniza el muro
+          // Catch-up: ante una conexión o reconexión se sincroniza el tablero
           onNewDataRef.current()
         },
       },

@@ -11,14 +11,14 @@ const es: Translations = {
   // ─── Meta / SEO ───────────────────────────────────────────────────────────
   home_title: "Anoty – Mensajes y dibujos anónimos para tus amigos",
   home_description:
-    "Crea tu muro privado con Google y recibe mensajes y dibujos anónimos de tus amigos. Solo tú puedes verlos.",
-  dashboard_title: "Mi Muro Privado – Anoty",
+    "Crea tu tablero privado con Google y recibe mensajes y dibujos anónimos de tus amigos. Solo tú puedes verlos.",
+  dashboard_title: "Mi Tablero Privado – Anoty",
   dashboard_description: "Tu tablero privado de dibujos anónimos.",
   send_title: (username: string) => `Envía una nota anónima a @${username} – Anoty`,
   send_description: (username: string) => `Envía un mensaje o dibujo anónimo a @${username}. Solo ellos podrán verlo.`,
-  public_loading_title: "Cargando muro... – Anoty",
-  public_notfound_title: "Muro no encontrado – Anoty",
-  public_board_description: (title: string) => `Muro público de dibujos anónimos: ${title}`,
+  public_loading_title: "Cargando tablero... – Anoty",
+  public_notfound_title: "Tablero no encontrado – Anoty",
+  public_board_description: (title: string) => `Tablero público de dibujos anónimos: ${title}`,
 
   // ─── Auth / Nav ───────────────────────────────────────────────────────────
   login_with_google: "Ingresar con Google",
@@ -62,8 +62,8 @@ const es: Translations = {
   footer_tagline: "Tableros de dibujo interactivos y anónimos.",
 
   // ─── Dashboard ────────────────────────────────────────────────────────────
-  loading_public_board: "Cargando tu muro público...",
-  loading_inbox: "Cargando tu muro...",
+  loading_public_board: "Cargando tu tablero público...",
+  loading_inbox: "Cargando tu tablero...",
   copied: "¡Copiado!",
   copy_share_link: "Copiar enlace para compartir",
   delete_drawing_error: "Error al eliminar un dibujo",
@@ -71,7 +71,7 @@ const es: Translations = {
 
   // ─── Board modes ──────────────────────────────────────────────────────────
   mode_inbox: "Mis anotys",
-  mode_public: "Muro público",
+  mode_public: "Tablero público",
 
   // ─── BoardControls tooltips ───────────────────────────────────────────────
   tool_select: "Seleccionar (V)",
@@ -94,13 +94,13 @@ const es: Translations = {
   hint_viewer: "Mantén y arrastra para moverte • Zoom con rueda o pellizco",
 
   // ─── EmptyBoard ───────────────────────────────────────────────────────────
-  empty_inbox_title: "Tu muro aún está vacío",
+  empty_inbox_title: "Tu tablero aún está vacío",
   empty_inbox_description:
     "Comparte tu enlace para que tus amigos te envíen dibujos anónimos. Llegan directo a este tablero y podrás moverlos como quieras.",
-  empty_public_title: "Tu muro público está vacío",
+  empty_public_title: "Tu tablero público está vacío",
   empty_public_description:
-    "Arrastra aquí tus dibujos desde el panel izquierdo para crear tu muro visible por cualquiera en Internet.",
-  empty_viewer_title: "Este muro está vacío",
+    "Arrastra aquí tus dibujos desde el panel izquierdo para crear tu tablero visible por cualquiera en Internet.",
+  empty_viewer_title: "Este tablero está vacío",
   empty_viewer_description: "El dueño aún no ha colocado ningún dibujo aquí.",
   copy_my_link: "Copiar mi enlace personal",
 
@@ -118,7 +118,7 @@ const es: Translations = {
   actions_confirm_delete_single: "¿Eliminar dibujo?",
   actions_confirm: "Confirmar",
   actions_cancel: "Cancelar",
-  actions_remove_from_wall: "Quitar del muro",
+  actions_remove_from_wall: "Quitar del tablero",
   actions_move_front_title: "Enviar la selección al frente",
   actions_move_back_title: "Enviar la selección al fondo",
   actions_download_title: "Descargar como imagen",
@@ -135,32 +135,32 @@ const es: Translations = {
 
   // ─── PublicControls ───────────────────────────────────────────────────────
   public_copy_link: "Copiar enlace público",
-  public_publish: "Publicar",
-  public_hide: "Ocultar",
-  public_visible_title: "Muro visible públicamente",
-  public_hidden_title: "Muro oculto (solo tú lo ves)",
+  public_publish: "Publicar tablero",
+  public_hide: "Ocultar tablero",
+  public_visible_title: "Tablero visible públicamente",
+  public_hidden_title: "Tablero oculto (solo tú lo ves)",
 
   // ─── PublicSidebar ───────────────────────────────────────────────────────
   sidebar_drop_to_remove: "Suelta para quitar",
   sidebar_settings: "Configuración",
-  sidebar_wall_name: "Nombre de tu muro",
-  sidebar_wall_placeholder: "Mi Muro Público",
+  sidebar_wall_name: "Nombre de tu tablero",
+  sidebar_wall_placeholder: "Mi Tablero Público",
   sidebar_your_drawings: "Tus dibujos",
-  sidebar_drag_hint: "Toca y arrastra uno al muro",
+  sidebar_drag_hint: "Toca y arrastra uno al tablero",
   sidebar_no_drawings: "No tienes dibujos sin colocar.",
-  sidebar_drag_to_wall: "Arrastrar al muro",
+  sidebar_drag_to_wall: "Arrastrar al tablero",
   sidebar_close_panel: "Cerrar panel",
   sidebar_add_drawings: "Añadir dibujos",
   sidebar_saving: "Guardando...",
   sidebar_saved: "¡Guardado!",
-  sidebar_save_wall: "Guardar muro",
+  sidebar_save_wall: "Guardar tablero",
 
   // ─── PublicBoardView ─────────────────────────────────────────────────────
-  public_loading_text: "Cargando muro público...",
-  public_notfound_heading: "Este muro no existe o está oculto",
+  public_loading_text: "Cargando tablero público...",
+  public_notfound_heading: "Este tablero no existe o está oculto",
   public_notfound_description: "El enlace puede estar mal escrito o el dueño lo despublicó.",
   public_notfound_back: "Volver a Anoty",
-  public_default_title: "Muro Público",
+  public_default_title: "Tablero Público",
 
   // ─── SendNote ─────────────────────────────────────────────────────────────
   send_header_title: (username: string) => `Envía una nota a @${username}`,
@@ -168,9 +168,9 @@ const es: Translations = {
   send_back: "Volver al inicio",
   send_success_heading: "¡Dibujo enviado con éxito! 🎉",
   send_success_body: (username: string) =>
-    `Tu dibujo fue guardado de forma anónima en el muro privado de @${username}.`,
+    `Tu dibujo fue guardado de forma anónima en el tablero privado de @${username}.`,
   send_another: "Dibujar otra nota",
-  send_create_wall: "Crear mi propio muro",
+  send_create_wall: "Crear mi propio tablero",
   send_button: (username: string) => `Enviar a @${username}`,
   send_sending: "Enviando...",
   send_error_default: "No se pudo enviar el dibujo",

@@ -68,7 +68,7 @@ const publicBoardSchema = new mongoose.Schema<IPublicBoard>(
     },
     title: {
       type: String,
-      default: "Mi Muro Público",
+      default: "Mi Tablero Público",
       trim: true,
     },
     isPublished: {

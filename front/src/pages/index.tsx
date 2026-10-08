@@ -14,6 +14,7 @@ import {
   Paintbrush,
   Send,
 } from "lucide-react"
+import { GithubIcon } from "@/components/icons/GithubIcon"
 import { motion } from "framer-motion"
 import { useGoogleLogin } from "@react-oauth/google"
 import { api } from "@/lib/api"
@@ -98,27 +99,36 @@ export default function Home() {
         <HeaderShell
           onLogoClick={() => router.push("/")}
           right={
-            user ? (
-              <div className="flex items-center gap-2 sm:gap-3">
-                <LanguageSwitcher />
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-3 sm:px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t("my_private_wall")}</span>
-                </button>
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
-                  title={t("sign_out")}
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <LanguageSwitcher />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <a
+                href="https://github.com/MistyBlunch/noty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900 transition-colors shadow-sm cursor-pointer"
+                title="GitHub Repository"
+                aria-label="GitHub Repository"
+              >
+                <GithubIcon className="w-4 h-4" />
+              </a>
+              <LanguageSwitcher />
+              {user ? (
+                <>
+                  <button
+                    onClick={() => router.push("/dashboard")}
+                    className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-medium px-3 sm:px-4 py-2 rounded-xl text-sm transition-all shadow-md cursor-pointer"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden sm:inline">{t("my_private_wall")}</span>
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 transition-colors cursor-pointer"
+                    title={t("sign_out")}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
                 <button
                   onClick={() => loginWithGoogle()}
                   disabled={isLoggingIn}
@@ -133,8 +143,8 @@ export default function Home() {
                   <span className="hidden sm:inline">{t("login_with_google")}</span>
                   <span className="sm:hidden">{isLoggingIn ? "..." : t("login_short")}</span>
                 </button>
-              </div>
-            )
+              )}
+            </div>
           }
         />
 
@@ -162,8 +172,8 @@ export default function Home() {
               {t("hero_subheading")}
             </p>
 
-            {/* CTA Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
               {user ? (
                 <button
                   onClick={() => router.push("/dashboard")}
@@ -189,6 +199,16 @@ export default function Home() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               )}
+              <a
+                href="https://github.com/MistyBlunch/noty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 font-semibold px-6 py-3.5 rounded-xl text-base shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="Ver código fuente en GitHub"
+              >
+                <GithubIcon className="w-5 h-5 text-slate-800" />
+                <span>GitHub</span>
+              </a>
             </div>
 
             {/* Micro badges */}
@@ -312,7 +332,18 @@ export default function Home() {
               </div>
               <span className="font-bold text-slate-700 font-mono text-sm">Anoty</span>
             </div>
-            <p>© {new Date().getFullYear()} Anoty App. {t("footer_tagline")}</p>
+            <div className="flex items-center gap-4">
+              <p>© {new Date().getFullYear()} Anoty App. {t("footer_tagline")}</p>
+              <a
+                href="https://github.com/MistyBlunch/noty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors font-medium hover:underline"
+              >
+                <GithubIcon className="w-3.5 h-3.5" />
+                <span>GitHub</span>
+              </a>
+            </div>
           </div>
         </footer>
       </div>

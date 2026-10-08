@@ -10,6 +10,7 @@ import publicBoardRoutes from "./routes/publicboard.routes.js"
 import { wsRoutes } from "./routes/ws.routes.js"
 import { connectDB } from "./lib/db.js"
 import { AppError } from "./lib/error.js"
+import { defaultEmailService } from "./services/email/index.js"
 
 const app = new Hono()
 
@@ -55,7 +56,7 @@ app.route("/auth", authRoutes)
 // Rutas de Tablero y Notas (/board/my-notes/:username, /board/send/:username, /board/notes/:noteId)
 app.route("/board", boardRoutes)
 
-// Rutas de Muros Públicos (/public-boards/:username, /public/:slug)
+// Rutas de Tableros Públicos (/public-boards/:username, /public/:slug)
 app.route("/", publicBoardRoutes)
 
 // WebSocket en tiempo real (/ws)
@@ -65,7 +66,7 @@ const port = Number(process.env.PORT) || 3000
 
 console.log(`🚀 Server is running on http://localhost:${port}`)
 console.log(`🔑 GOOGLE_CLIENT_ID cargado: ${process.env.GOOGLE_CLIENT_ID ? "SÍ ✅ (" + process.env.GOOGLE_CLIENT_ID.substring(0, 15) + "...)" : "NO ❌"}`)
-console.log(`📧 RESEND_API_KEY cargado: ${process.env.RESEND_API_KEY ? "SÍ ✅" : "NO ❌ (notificaciones por correo desactivadas)"}`)
+console.log(`📧 Notificaciones por correo: ${defaultEmailService.isConfigured() ? "ACTIVADAS ✅" : "DESACTIVADAS ❌ (proveedor de correo no configurado)"}`)
 
 serve({
   fetch: app.fetch,

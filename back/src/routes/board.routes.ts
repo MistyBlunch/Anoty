@@ -58,13 +58,13 @@ const validationError = (result: { success: boolean; error?: any }, c: any) => {
   }
 }
 
-// GET /board/user/:username - Obtener info pública del dueño del muro (Público)
+// GET /board/user/:username - Obtener info pública del dueño del tablero (Público)
 board.get("/user/:username", async (c) => {
   const username = c.req.param("username").toLowerCase()
   return c.json(await boardService.getRecipientInfo(username))
 })
 
-// GET /board/my-notes/:username - Obtener las notas recibidas por el dueño del muro (Privado)
+// GET /board/my-notes/:username - Obtener las notas recibidas por el dueño del tablero (Privado)
 board.get("/my-notes/:username", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
   assertOwnUsername(c, username)
@@ -115,7 +115,7 @@ board.delete("/notes/:noteId", authMiddleware, async (c) => {
 
 function assertOwnUsername(c: Context, username: string) {
   if (username !== c.get("authUser").username) {
-    throw new AppError(403, "No tienes permiso para acceder a este muro")
+    throw new AppError(403, "No tienes permiso para acceder a este tablero")
   }
 }
 
