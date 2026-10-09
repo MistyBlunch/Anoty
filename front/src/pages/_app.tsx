@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { LanguageProvider } from '@/context/LanguageContext'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -25,6 +26,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           </Head>
           <Component {...pageProps} />
           <Analytics />
+          <SpeedInsights />
         </LanguageProvider>
       </GoogleOAuthProvider>
     </div>
