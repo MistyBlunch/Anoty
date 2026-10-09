@@ -118,7 +118,7 @@ export function useDrawings({ user, fitToContent, findVisibleSlot }: UseDrawings
             })
         }
       } catch (error) {
-        console.error("Error al cargar el muro:", error)
+        console.error("Error al cargar el tablero:", error)
       } finally {
         setIsLoading(false)
       }

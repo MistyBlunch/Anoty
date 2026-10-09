@@ -1,12 +1,20 @@
 import type { UserRepository } from "../repositories/user.repository.js"
 import type { NoteRepository } from "../repositories/note.repository.js"
 import type { CreateNoteInput, UpdateNotePositionInput } from "../schemas/board.schema.js"
+import type { IUser } from "../models/user.model.js"
+import type { INote } from "../models/note.model.js"
 import { AppError } from "../lib/error.js"
 
 export type BoardService = ReturnType<typeof createBoardService>
 
+export interface NewDrawingNotificationEvent {
+  recipient: IUser
+  note: INote
+}
+
 export type Notifier = {
   onNewDrawing?: (username: string) => void
+  onDrawingCreated?: (event: NewDrawingNotificationEvent) => void | Promise<void>
 }
 
 export function createBoardService(deps: {
@@ -86,9 +94,20 @@ export function createBoardService(deps: {
 
     notifier?.onNewDrawing?.(username)
 
+    if (newNote.type === "drawing") {
+      try {
+        void notifier?.onDrawingCreated?.({
+          recipient: user,
+          note: newNote,
+        })
+      } catch (err) {
+        console.error("Error al disparar notifier.onDrawingCreated:", err)
+      }
+    }
+
     return {
       success: true,
-      message: `¡Tu nota anónima fue enviada con éxito al muro de @${username}! 🎉`,
+      message: `¡Tu nota anónima fue enviada con éxito al tablero de @${username}! 🎉`,
       recipient: {
         username: user.username,
         name: user.name || user.username,

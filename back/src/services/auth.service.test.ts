@@ -16,6 +16,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     existsByUsername: async () => false,
     create: async (data) => ({ _id: "new-id", ...data }) as any,
     save: async (user) => user,
+    updateLocale: async () => null,
     ...overrides,
   }
 }

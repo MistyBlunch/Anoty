@@ -11,6 +11,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     existsByUsername: async () => true,
     create: async (data) => data as any,
     save: async (user) => user,
+    updateLocale: async () => null,
     ...overrides,
   }
 }
@@ -28,10 +29,12 @@ function makeNoteRepo(overrides: Partial<NoteRepository> = {}): NoteRepository {
   }
 }
 
+import type { Notifier } from "./board.service.js"
+
 const service = (
   u: Partial<UserRepository> = {},
   n: Partial<NoteRepository> = {},
-  notifier: { onNewDrawing?: (username: string) => void } = {},
+  notifier: Notifier = {},
 ) =>
   createBoardService({
     userRepo: makeUserRepo(u),
@@ -165,5 +168,35 @@ describe("board.service", () => {
   it("sendNote funciona sin notifier configurado", async () => {
     const res = await service({}, {}).sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
     expect(res.success).toBe(true)
+  })
+
+  it("sendNote dispara onDrawingCreated con receptor y nota cuando es de tipo drawing", async () => {
+    const onDrawingCreated = vi.fn()
+    const svc = service(
+      { findByUsername: async () => ({ _id: "u1", username: "emma", email: "emma@example.com" }) as any },
+      { create: async (data) => ({ _id: "n1", ...data }) as any },
+      { onDrawingCreated },
+    )
+
+    await svc.sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
+
+    expect(onDrawingCreated).toHaveBeenCalledTimes(1)
+    expect(onDrawingCreated).toHaveBeenCalledWith({
+      recipient: expect.objectContaining({ username: "emma", email: "emma@example.com" }),
+      note: expect.objectContaining({ _id: "n1", type: "drawing" }),
+    })
+  })
+
+  it("sendNote no dispara onDrawingCreated cuando el tipo de nota no es drawing", async () => {
+    const onDrawingCreated = vi.fn()
+    const svc = service(
+      {},
+      { create: async (data) => ({ _id: "n1", ...data }) as any },
+      { onDrawingCreated },
+    )
+
+    await svc.sendNote("emma", { type: "text", content: "Hola!" } as any)
+
+    expect(onDrawingCreated).not.toHaveBeenCalled()
   })
 })

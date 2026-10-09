@@ -1,15 +1,6 @@
 import { MousePointer2, Hand, BoxSelect, Undo2, Redo2, ZoomIn, ZoomOut } from "lucide-react"
-
-interface BoardControlsProps {
-  tool: "select" | "hand" | "marquee"
-  canUndo: boolean
-  canRedo: boolean
-  zoom: number
-  onToolChange: (tool: "select" | "hand" | "marquee") => void
-  onUndo: () => void
-  onRedo: () => void
-  onZoom: (factor: number) => void
-}
+import { useLanguage } from "@/context/LanguageContext"
+import type { BoardControlsProps } from "@/types"
 
 export default function BoardControls({
   tool,
@@ -21,8 +12,9 @@ export default function BoardControls({
   onRedo,
   onZoom,
 }: BoardControlsProps) {
+  const { t } = useLanguage()
   return (
-    <div className="absolute bottom-5 right-5 z-30 flex flex-col gap-1.5 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-lg">
+    <div className="absolute bottom-2 right-5 z-30 flex flex-col gap-1.5 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-lg">
       <button
         onClick={() => onToolChange("select")}
         className={`p-2 rounded-xl transition-colors cursor-pointer ${
@@ -30,7 +22,7 @@ export default function BoardControls({
             ? "bg-teal-500/10 text-teal-700 border border-teal-500/30"
             : "hover:bg-slate-100 text-slate-700"
         }`}
-        title="Seleccionar (V)"
+        title={t("tool_select")}
       >
         <MousePointer2 className="w-4 h-4" />
       </button>
@@ -41,7 +33,7 @@ export default function BoardControls({
             ? "bg-teal-500/10 text-teal-700 border border-teal-500/30"
             : "hover:bg-slate-100 text-slate-700"
         }`}
-        title="Mano (H)"
+        title={t("tool_hand")}
       >
         <Hand className="w-4 h-4" />
       </button>
@@ -52,7 +44,7 @@ export default function BoardControls({
             ? "bg-teal-500/10 text-teal-700 border border-teal-500/30"
             : "hover:bg-slate-100 text-slate-700"
         }`}
-        title="Selección múltiple (M) — arrastra en el lienzo"
+        title={t("tool_marquee")}
       >
         <BoxSelect className="w-4 h-4" />
       </button>
@@ -63,7 +55,7 @@ export default function BoardControls({
         className={`p-2 rounded-xl transition-colors cursor-pointer ${
           canUndo ? "hover:bg-slate-100 text-slate-700" : "text-slate-300 cursor-default"
         }`}
-        title="Deshacer (Ctrl+Z)"
+        title={t("tool_undo")}
       >
         <Undo2 className="w-4 h-4" />
       </button>
@@ -73,7 +65,7 @@ export default function BoardControls({
         className={`p-2 rounded-xl transition-colors cursor-pointer ${
           canRedo ? "hover:bg-slate-100 text-slate-700" : "text-slate-300 cursor-default"
         }`}
-        title="Rehacer (Ctrl+Y / Ctrl+Shift+Z)"
+        title={t("tool_redo")}
       >
         <Redo2 className="w-4 h-4" />
       </button>
@@ -81,7 +73,7 @@ export default function BoardControls({
       <button
         onClick={() => onZoom(1.2)}
         className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
-        title="Acercar"
+        title={t("tool_zoom_in")}
       >
         <ZoomIn className="w-4 h-4" />
       </button>
@@ -91,7 +83,7 @@ export default function BoardControls({
       <button
         onClick={() => onZoom(1 / 1.2)}
         className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
-        title="Alejar"
+        title={t("tool_zoom_out")}
       >
         <ZoomOut className="w-4 h-4" />
       </button>

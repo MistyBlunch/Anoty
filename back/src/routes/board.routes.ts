@@ -7,6 +7,7 @@ import { createBoardService } from "../services/board.service.js"
 import { authMiddleware } from "../middleware/auth.middleware.js"
 import { AppError } from "../lib/error.js"
 import { wsHub, WS_USER_PREFIX } from "../lib/ws-hub.js"
+import { defaultEmailService } from "../services/email/index.js"
 
 const board = new Hono()
 const boardService = createBoardService({
@@ -15,6 +16,39 @@ const boardService = createBoardService({
   notifier: {
     onNewDrawing: (username) =>
       wsHub.broadcast(`${WS_USER_PREFIX}${username}`, { type: "new-drawing" }),
+    onDrawingCreated: async ({ recipient, note }) => {
+      if (!recipient.email) return
+
+      const appUrl = process.env.APP_URL || "https://anoty.app"
+      const resolvedLocale =
+        recipient.locale === "es" || recipient.locale === "en"
+          ? recipient.locale
+          : (process.env.EMAIL_LOCALE === "es" ? "es" : "en")
+
+      const isAnonymous =
+        !note.authorName ||
+        [
+          "amigo anónimo",
+          "amigo anonimo",
+          "un amigo anónimo",
+          "un amigo anonimo",
+          "anonymous friend",
+          "an anonymous friend",
+        ].includes(note.authorName.trim().toLowerCase())
+
+      const authorName = isAnonymous
+        ? (resolvedLocale === "es" ? "Un amigo anónimo" : "An anonymous friend")
+        : note.authorName
+
+      void defaultEmailService.sendNewDrawingNotification({
+        to: recipient.email,
+        recipientName: recipient.name || recipient.username,
+        recipientUsername: recipient.username,
+        authorName,
+        boardUrl: `${appUrl}/dashboard`,
+        locale: resolvedLocale,
+      })
+    },
   },
 })
 
@@ -24,13 +58,13 @@ const validationError = (result: { success: boolean; error?: any }, c: any) => {
   }
 }
 
-// GET /board/user/:username - Obtener info pública del dueño del muro (Público)
+// GET /board/user/:username - Obtener info pública del dueño del tablero (Público)
 board.get("/user/:username", async (c) => {
   const username = c.req.param("username").toLowerCase()
   return c.json(await boardService.getRecipientInfo(username))
 })
 
-// GET /board/my-notes/:username - Obtener las notas recibidas por el dueño del muro (Privado)
+// GET /board/my-notes/:username - Obtener las notas recibidas por el dueño del tablero (Privado)
 board.get("/my-notes/:username", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
   assertOwnUsername(c, username)
@@ -81,7 +115,7 @@ board.delete("/notes/:noteId", authMiddleware, async (c) => {
 
 function assertOwnUsername(c: Context, username: string) {
   if (username !== c.get("authUser").username) {
-    throw new AppError(403, "No tienes permiso para acceder a este muro")
+    throw new AppError(403, "No tienes permiso para acceder a este tablero")
   }
 }
 

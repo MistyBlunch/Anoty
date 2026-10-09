@@ -1,0 +1,192 @@
+import type { TranslationKey } from "./en"
+import en from "./en"
+
+type Translations = {
+  [K in TranslationKey]: typeof en[K] extends (...args: infer A) => string
+    ? (...args: A) => string
+    : string
+}
+
+const es: Translations = {
+  // ─── Meta / SEO ───────────────────────────────────────────────────────────
+  home_title: "Anoty – Mensajes y dibujos anónimos para tus amigos",
+  home_description:
+    "Crea tu tablero privado con Google y recibe mensajes y dibujos anónimos de tus amigos. Solo tú puedes verlos.",
+  dashboard_title: "Mi Tablero Privado – Anoty",
+  dashboard_description: "Tu tablero privado de dibujos anónimos.",
+  send_title: (username: string) => `Envía una nota anónima a @${username} – Anoty`,
+  send_description: (username: string) => `Envía un mensaje o dibujo anónimo a @${username}. Solo ellos podrán verlo.`,
+  public_loading_title: "Cargando tablero... – Anoty",
+  public_notfound_title: "Tablero no encontrado – Anoty",
+  public_board_description: (title: string) => `Tablero público de dibujos anónimos: ${title}`,
+
+  // ─── Auth / Nav ───────────────────────────────────────────────────────────
+  login_with_google: "Ingresar con Google",
+  login_short: "Ingresar",
+  connecting: "Conectando...",
+  sign_out: "Cerrar sesión",
+  my_private_wall: "Mi Tablero Privado",
+  go_to_my_wall: "Ir a mi Tablero",
+  validating_session: "Validando sesión...",
+  login_error_default: "No se pudo iniciar sesión",
+  login_backend_error: "No se pudo conectar con el servidor backend",
+  login_oauth_error: "Fallo al abrir la ventana de Google OAuth",
+
+  // ─── Home hero & Landing ──────────────────────────────────────────────────
+  hero_badge: "🎨 Tablero de Dibujo Anónimo",
+  hero_heading_1: "Recibe dibujos anónimos de tus amigos",
+  hero_heading_2: "en vivo en tu tablero privado",
+  hero_subheading:
+    "Inicia sesión con Google, comparte tu enlace y deja que tus amigos dibujen notas secretas. Las notas llegan a tu tablero interactivo en tiempo real.",
+  hero_cta_create: "Crear mi tablero con Google",
+  hero_check_no_passwords: "Sin contraseñas",
+  hero_check_private: "100% Privado para ti",
+  hero_check_no_register: "Tus amigos dibujan sin registrarse",
+  hero_share_preview_label: "Comparte este enlace con tus amigos:",
+  hero_share_preview_sublabel: "Bio de Instagram • TikTok • WhatsApp • Historias",
+  hero_share_preview_copied: "¡Copiado!",
+  hero_share_preview_copy_btn: "Copiar enlace para compartir",
+
+  how_it_works_title: "¿Cómo funciona?",
+  how_it_works_subtitle: "Comienza a recibir notas y garabatos anónimos en 3 simples pasos",
+  step_1_badge: "1",
+  step_1_title: "Obtén tu enlace",
+  step_1_desc: "Inicia sesión con Google en 1 clic y obtén tu enlace personal de dibujo.",
+  step_2_badge: "2",
+  step_2_title: "Compártelo con amigos",
+  step_2_desc: "Pégalo en tus redes o chats. Tus amigos dibujan de inmediato sin crearse cuenta.",
+  step_3_badge: "3",
+  step_3_title: "Recibe notas en vivo",
+  step_3_desc: "Los dibujos aparecen en tu tablero interactivo en tiempo real. Muévelos, organízalos y guárdalos.",
+
+  footer_tagline: "Tableros de dibujo interactivos y anónimos.",
+
+  // ─── Dashboard ────────────────────────────────────────────────────────────
+  loading_public_board: "Cargando tu tablero público...",
+  loading_inbox: "Cargando tu tablero...",
+  copied: "¡Copiado!",
+  copy_share_link: "Copiar enlace para compartir",
+  delete_drawing_error: "Error al eliminar un dibujo",
+  validating: "Validando...",
+
+  // ─── Board modes ──────────────────────────────────────────────────────────
+  mode_inbox: "Mis anotys",
+  mode_public: "Tablero público",
+
+  // ─── BoardControls tooltips ───────────────────────────────────────────────
+  tool_select: "Seleccionar (V)",
+  tool_hand: "Mano (H)",
+  tool_marquee: "Selección múltiple (M) — arrastra en el lienzo",
+  tool_undo: "Deshacer (Ctrl+Z)",
+  tool_redo: "Rehacer (Ctrl+Y / Ctrl+Shift+Z)",
+  tool_zoom_in: "Acercar",
+  tool_zoom_out: "Alejar",
+
+  // ─── HintBar ──────────────────────────────────────────────────────────────
+  hint_hand:
+    "Modo mano — arrastra para mover el lienzo • Rueda o pellizco para zoom • V: seleccionar • Ctrl+Z: deshacer",
+  hint_marquee:
+    "Arrastra en el lienzo para seleccionar varios dibujos • Mantén Shift mientras arrastras para sumar • Esc: salir",
+  hint_public:
+    "Arrastra tus dibujos desde el panel izquierdo • Mueve y reordena como quieras • M: selección múltiple • H: mano • Ctrl+Z: deshacer",
+  hint_inbox:
+    "Arrastra el fondo para moverte • Rueda o pellizco para zoom • Arrastra un dibujo para moverlo • M: selección múltiple • H: mano • Ctrl+Z: deshacer",
+  hint_viewer: "Mantén y arrastra para moverte • Zoom con rueda o pellizco",
+
+  // ─── EmptyBoard ───────────────────────────────────────────────────────────
+  empty_inbox_title: "Tu tablero aún está vacío",
+  empty_inbox_description:
+    "Comparte tu enlace para que tus amigos te envíen dibujos anónimos. Llegan directo a este tablero y podrás moverlos como quieras.",
+  empty_public_title: "Tu tablero público está vacío",
+  empty_public_description:
+    "Arrastra aquí tus dibujos desde el panel izquierdo para crear tu tablero visible por cualquiera en Internet.",
+  empty_viewer_title: "Este tablero está vacío",
+  empty_viewer_description: "El dueño aún no ha colocado ningún dibujo aquí.",
+  copy_my_link: "Copiar mi enlace personal",
+
+  // ─── ActionsMenu ─────────────────────────────────────────────────────────
+  actions_selected: (n: number) => `${n} seleccionadas`,
+  actions_download_png: "Descargar como imagen",
+  actions_move_front: "Adelante",
+  actions_move_back: "Atrás",
+  actions_bg_add: "Fondo",
+  actions_bg_remove: "Quitar fondo",
+  actions_bg_title_multi: "Alternar fondo de los dibujos seleccionados",
+  actions_bg_title_single: "Alternar fondo del dibujo",
+  actions_delete: "Eliminar",
+  actions_confirm_delete_multi: (n: number) => `¿Eliminar ${n} dibujos?`,
+  actions_confirm_delete_single: "¿Eliminar dibujo?",
+  actions_confirm: "Confirmar",
+  actions_cancel: "Cancelar",
+  actions_remove_from_wall: "Quitar del tablero",
+  actions_move_front_title: "Enviar la selección al frente",
+  actions_move_back_title: "Enviar la selección al fondo",
+  actions_download_title: "Descargar como imagen",
+
+  // ─── HeaderActions ────────────────────────────────────────────────────────
+  header_logout_title: "Cerrar sesión",
+
+  // ─── NotificationsDropdown ───────────────────────────────────────────────
+  notifications_title: "Notificaciones",
+  notifications_new_drawings: "Dibujos nuevos",
+  notifications_empty: "Sin notificaciones nuevas.",
+  notifications_anonymous_friend: "Amigo Anónimo",
+  notifications_clear: "Limpiar notificaciones",
+
+  // ─── PublicControls ───────────────────────────────────────────────────────
+  public_copy_link: "Copiar enlace público",
+  public_publish: "Publicar tablero",
+  public_hide: "Ocultar tablero",
+  public_visible_title: "Tablero visible públicamente",
+  public_hidden_title: "Tablero oculto (solo tú lo ves)",
+
+  // ─── PublicSidebar ───────────────────────────────────────────────────────
+  sidebar_drop_to_remove: "Suelta para quitar",
+  sidebar_settings: "Configuración",
+  sidebar_wall_name: "Nombre de tu tablero",
+  sidebar_wall_placeholder: "Mi Tablero Público",
+  sidebar_your_drawings: "Tus dibujos",
+  sidebar_drag_hint: "Toca y arrastra uno al tablero",
+  sidebar_no_drawings: "No tienes dibujos sin colocar.",
+  sidebar_drag_to_wall: "Arrastrar al tablero",
+  sidebar_close_panel: "Cerrar panel",
+  sidebar_add_drawings: "Añadir dibujos",
+  sidebar_saving: "Guardando...",
+  sidebar_saved: "¡Guardado!",
+  sidebar_save_wall: "Guardar tablero",
+
+  // ─── PublicBoardView ─────────────────────────────────────────────────────
+  public_loading_text: "Cargando tablero público...",
+  public_notfound_heading: "Este tablero no existe o está oculto",
+  public_notfound_description: "El enlace puede estar mal escrito o el dueño lo despublicó.",
+  public_notfound_back: "Volver a Anoty",
+  public_default_title: "Tablero Público",
+
+  // ─── SendNote ─────────────────────────────────────────────────────────────
+  send_header_title: (username: string) => `Envía una nota a @${username}`,
+  send_avatar_alt: (name: string) => `Avatar de ${name}`,
+  send_back: "Volver al inicio",
+  send_success_heading: "¡Dibujo enviado con éxito! 🎉",
+  send_success_body: (username: string) =>
+    `Tu dibujo fue guardado de forma anónima en el tablero privado de @${username}.`,
+  send_another: "Dibujar otra nota",
+  send_create_wall: "Crear mi propio tablero",
+  send_button: (username: string) => `Enviar a @${username}`,
+  send_sending: "Enviando...",
+  send_error_default: "No se pudo enviar el dibujo",
+  send_backend_error: "No se pudo enviar el dibujo al servidor",
+  send_button_title: (username: string) => `Enviar el dibujo de forma anónima a @${username}`,
+  send_anonymous_author: "Amigo Anónimo",
+  send_excalidraw_welcome: "¡Dibuja algo y envíalo anónimamente!",
+  send_excalidraw_actions: "Acciones",
+
+  // ─── ExcalidrawCanvas ────────────────────────────────────────────────────
+  excalidraw_send_error: "No se pudo enviar el dibujo",
+
+  // ─── Language switcher ───────────────────────────────────────────────────
+  lang_switch_label: "Idioma",
+  lang_en: "English",
+  lang_es: "Español",
+}
+
+export default es

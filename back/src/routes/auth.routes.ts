@@ -42,9 +42,31 @@ auth.post(
 // GET /auth/me - Valida la sesión del usuario autenticado
 auth.get("/me", authMiddleware, async (c) => {
   const { sub: id, username } = c.get("authUser")
+  const user = await mongoUserRepository.findByUsername(username)
   return c.json({
     success: true,
-    user: { id, username },
+    user: {
+      id,
+      username,
+      name: user?.name,
+      avatar: user?.avatar,
+      email: user?.email,
+      locale: user?.locale || "en",
+    },
+  })
+})
+
+// PATCH /auth/preferences - Actualizar preferencias del usuario (ej. idioma)
+auth.patch("/preferences", authMiddleware, async (c) => {
+  const { username } = c.get("authUser")
+  const body = (await c.req.json().catch(() => ({}))) as { locale?: string }
+  const locale = body?.locale === "es" ? "es" : "en"
+  const user = await mongoUserRepository.updateLocale(username, locale)
+
+  return c.json({
+    success: true,
+    message: "Preferencias actualizadas",
+    locale: user?.locale || locale,
   })
 })
 

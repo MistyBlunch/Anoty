@@ -10,6 +10,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     existsByUsername: async () => true,
     create: async (data) => data as any,
     save: async (user) => user,
+    updateLocale: async () => null,
     ...overrides,
   }
 }
@@ -60,7 +61,7 @@ describe("publicboard.service", () => {
       expect.objectContaining({
         ownerUsername: "emma",
         slug: "emma",
-        title: "Mi Muro Público",
+        title: "Mi Tablero Público",
         isPublished: true,
         items: [],
       }),
@@ -108,7 +109,7 @@ describe("publicboard.service", () => {
     const svc = service({}, { findById: async () => null })
     await expect(svc.updateBoard("x", {})).rejects.toMatchObject({
       status: 404,
-      message: "Board público no encontrado",
+      message: "Tablero público no encontrado",
     })
   })
 

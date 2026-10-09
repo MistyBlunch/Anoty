@@ -1,0 +1,81 @@
+"use client"
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { type Locale, translations } from "@/lib/i18n"
+import { api } from "@/lib/api"
+import type { LanguageContextValue, LanguageProviderProps } from "@/types"
+
+const STORAGE_KEY = "anoty_locale"
+const DEFAULT_LOCALE: Locale = "en"
+
+const LanguageContext = createContext<LanguageContextValue | null>(null)
+
+export function LanguageProvider({
+  children,
+  initialLocale,
+}: LanguageProviderProps) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale || DEFAULT_LOCALE)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const urlLang = params.get("lang") as Locale | null
+      if (urlLang === "en" || urlLang === "es") {
+        setLocaleState(urlLang)
+        localStorage.setItem(STORAGE_KEY, urlLang)
+        return
+      }
+
+      const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
+      if (stored && (stored === "en" || stored === "es")) {
+        setLocaleState(stored)
+      } else if (initialLocale) {
+        setLocaleState(initialLocale)
+      } else {
+        const savedUser = localStorage.getItem("user")
+        if (savedUser) {
+          try {
+            const parsed = JSON.parse(savedUser)
+            if (parsed.locale === "en" || parsed.locale === "es") {
+              setLocaleState(parsed.locale)
+            }
+          } catch {}
+        }
+      }
+    }
+  }, [initialLocale])
+
+  const setLocale = useCallback((next: Locale) => {
+    setLocaleState(next)
+    localStorage.setItem(STORAGE_KEY, next)
+
+    if (typeof window !== "undefined" && localStorage.getItem("token")) {
+      api.patch("/auth/preferences", { locale: next }).catch(() => {})
+      const savedUser = localStorage.getItem("user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          parsed.locale = next
+          localStorage.setItem("user", JSON.stringify(parsed))
+        } catch {}
+      }
+    }
+  }, [])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const t = useCallback((key: string, ...args: any[]): string => {
+    const dict = translations[locale]
+    const val = dict[key]
+    if (typeof val === "function") {
+      return val(...args)
+    }
+    return (val as string) ?? key
+  }, [locale])
+
+  return <LanguageContext.Provider value={{ locale, setLocale, t }}>{children}</LanguageContext.Provider>
+}
+
+export function useLanguage(): LanguageContextValue {
+  const ctx = useContext(LanguageContext)
+  if (!ctx) throw new Error("useLanguage must be used inside <LanguageProvider>")
+  return ctx
+}

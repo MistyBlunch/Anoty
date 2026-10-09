@@ -6,6 +6,7 @@ export interface UserRepository {
   existsByUsername(username: string): Promise<boolean>
   create(data: Partial<IUser>): Promise<IUser>
   save(user: IUser): Promise<IUser>
+  updateLocale(username: string, locale: "es" | "en"): Promise<IUser | null>
 }
 
 export const mongoUserRepository: UserRepository = {
@@ -13,7 +14,7 @@ export const mongoUserRepository: UserRepository = {
     return User.findOne({ $or: [{ googleId }, ...(email ? [{ email }] : [])] })
   },
   async findByUsername(username) {
-    return (await User.findOne({ username }).select("username name avatar")) as IUser | null
+    return (await User.findOne({ username }).select("username name avatar email locale")) as IUser | null
   },
   async existsByUsername(username) {
     const found = await User.exists({ username })
@@ -25,5 +26,12 @@ export const mongoUserRepository: UserRepository = {
   async save(user) {
     await (user as any).save()
     return user
+  },
+  async updateLocale(username, locale) {
+    return (await User.findOneAndUpdate(
+      { username },
+      { $set: { locale } },
+      { new: true },
+    )) as IUser | null
   },
 }

@@ -1,8 +1,4 @@
-import type { MarqueeRect } from "@/hooks/useBoardGesture"
-
-interface MarqueeOverlayProps {
-  rect: MarqueeRect
-}
+import type { MarqueeOverlayProps } from "@/types"
 
 export default function MarqueeOverlay({ rect }: MarqueeOverlayProps) {
   return (

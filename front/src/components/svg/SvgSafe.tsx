@@ -1,10 +1,11 @@
+import { memo, useMemo } from "react"
 import { svgSafeHtml } from "@/lib/svg"
+import type { SvgSafeProps } from "@/types"
 
-interface SvgSafeProps {
-  svg: string
-  className?: string
+function SvgSafe({ svg, className }: SvgSafeProps) {
+  // Sanitizing large Excalidraw SVGs is expensive; only redo it when the content changes.
+  const html = useMemo(() => ({ __html: svgSafeHtml(svg) }), [svg])
+  return <div className={className} dangerouslySetInnerHTML={html} />
 }
 
-export default function SvgSafe({ svg, className }: SvgSafeProps) {
-  return <div className={className} dangerouslySetInnerHTML={{ __html: svgSafeHtml(svg) }} />
-}
+export default memo(SvgSafe)

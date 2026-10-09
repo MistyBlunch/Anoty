@@ -3,20 +3,37 @@ import { Send, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import '@excalidraw/excalidraw/index.css'
 import { api } from '@/lib/api'
+import { useLanguage } from '@/context/LanguageContext'
+import type { ExcalidrawCanvasProps } from '@/types'
 
-interface ExcalidrawCanvasProps {
-  username?: string
-  onSent?: () => void
-}
-
-const ExcalidrawCanvas = dynamic(
+const ExcalidrawInner = dynamic(
   async () => {
     const { Excalidraw, MainMenu, WelcomeScreen, exportToSvg } = await import('@excalidraw/excalidraw')
 
-    return function ExcalidrawCanvasInner({ username, onSent }: ExcalidrawCanvasProps) {
-      const [elements, setElements] = useState<readonly any[]>([])
-      const [appState, setAppState] = useState<any>(null)
-      const [files, setFiles] = useState<any>(null)
+    return function ExcalidrawCanvasInner({
+      username,
+      onSent,
+      langCode,
+      sendLabel,
+      sendingLabel,
+      sendTitle,
+      anonymousAuthor,
+      welcomeHeading,
+      actionsLabel,
+      errorDefault,
+      errorBackend,
+    }: ExcalidrawCanvasProps & {
+      langCode: string
+      sendLabel: string
+      sendingLabel: string
+      sendTitle: string
+      anonymousAuthor: string
+      welcomeHeading: string
+      actionsLabel: string
+      errorDefault: string
+      errorBackend: string
+    }) {
+      const [hasElements, setHasElements] = useState(false)
       const [isSending, setIsSending] = useState(false)
       const excalidrawApiRef = useRef<any>(null)
 
@@ -40,12 +57,20 @@ const ExcalidrawCanvas = dynamic(
       }, [])
 
       const handleSendDrawing = async () => {
-        if (!username || !elements || elements.length === 0) return
+        const apiInstance = excalidrawApiRef.current
+        if (!apiInstance || !username) return
+
+        const elements = apiInstance.getSceneElements()
+        const activeElements = elements?.filter((el: any) => !el.isDeleted)
+        if (!activeElements || activeElements.length === 0) return
+
+        const appState = apiInstance.getAppState()
+        const files = apiInstance.getFiles()
         setIsSending(true)
 
         try {
           const svg = await exportToSvg({
-            elements,
+            elements: activeElements,
             appState: {
               ...appState,
               exportBackground: false,
@@ -63,7 +88,7 @@ const ExcalidrawCanvas = dynamic(
               type: 'drawing',
               content: svg.outerHTML,
               color: '#ffffff',
-              authorName: 'Amigo Anónimo',
+              authorName: anonymousAuthor,
               width,
               height,
             },
@@ -71,44 +96,44 @@ const ExcalidrawCanvas = dynamic(
           if (data.success) {
             onSent?.()
           } else {
-            alert(`Error: ${data.message || 'No se pudo enviar el dibujo'}`)
+            alert(`Error: ${data.message || errorDefault}`)
           }
         } catch (error) {
-          console.error('Error al enviar dibujo:', error)
-          alert('No se pudo enviar el dibujo al servidor')
+          console.error('Error sending drawing:', error)
+          alert(errorBackend)
         } finally {
           setIsSending(false)
         }
       }
 
-      const canSend = username && elements && elements.length > 0
+      const canSend = Boolean(username && hasElements)
 
       return (
         <div className="relative h-full">
-          <div className="absolute top-3 right-3 z-50">
+          <div className="absolute max-sm:w-11/12 max-sm:bottom-17 bottom-5 max-lg:left-1/2 max-lg:-translate-x-1/2 lg:top-3 lg:right-3 z-50">
             <button
               onClick={handleSendDrawing}
               disabled={!canSend || isSending}
-              className="flex items-center gap-1.5 bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
-              title={`Enviar el dibujo de forma anónima a @${username || '...'}`}
+              className="flex items-center justify-center gap-1.5 max-sm:w-full bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
+              title={sendTitle}
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>{isSending ? 'Enviando...' : `Enviar a @${username}`}</span>
+              <span className='truncate'>{isSending ? sendingLabel : sendLabel}</span>
             </button>
           </div>
 
           <Excalidraw
+            langCode={langCode}
             excalidrawAPI={(api: any) => {
               excalidrawApiRef.current = api
             }}
-            onChange={(els: readonly any[], app: any, fls: any) => {
-              setElements(els)
-              setAppState(app)
-              setFiles(fls)
+            onChange={(els: readonly any[]) => {
+              const isNotEmpty = Boolean(els && els.some((el: any) => !el.isDeleted))
+              setHasElements((prev) => (prev !== isNotEmpty ? isNotEmpty : prev))
             }}
           >
             <MainMenu>
-              <MainMenu.Group title="Acciones">
+              <MainMenu.Group title={actionsLabel}>
                 <MainMenu.DefaultItems.SaveAsImage />
                 <MainMenu.DefaultItems.ClearCanvas />
               </MainMenu.Group>
@@ -120,7 +145,7 @@ const ExcalidrawCanvas = dynamic(
             <WelcomeScreen>
               <WelcomeScreen.Center>
                 <WelcomeScreen.Center.Heading>
-                  ¡Dibuja algo y envíalo anónimamente!
+                  {welcomeHeading}
                 </WelcomeScreen.Center.Heading>
               </WelcomeScreen.Center>
             </WelcomeScreen>
@@ -132,4 +157,23 @@ const ExcalidrawCanvas = dynamic(
   { ssr: false }
 )
 
-export default ExcalidrawCanvas
+export default function ExcalidrawCanvas({ username, onSent }: ExcalidrawCanvasProps) {
+  const { t, locale } = useLanguage()
+  const langCode = locale === 'es' ? 'es-ES' : 'en'
+
+  return (
+    <ExcalidrawInner
+      username={username}
+      onSent={onSent}
+      langCode={langCode}
+      sendLabel={t('send_button', username || '...')}
+      sendingLabel={t('send_sending')}
+      sendTitle={t('send_button_title', username || '...')}
+      anonymousAuthor={t('send_anonymous_author')}
+      welcomeHeading={t('send_excalidraw_welcome')}
+      actionsLabel={t('send_excalidraw_actions')}
+      errorDefault={t('send_error_default')}
+      errorBackend={t('send_backend_error')}
+    />
+  )
+}
