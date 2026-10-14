@@ -24,7 +24,7 @@ import {
   hintForTool,
   type Drawing,
 } from "@/features/board"
-import { HeaderActions, ActionsMenu } from "@/features/dashboard"
+import { HeaderActions, ActionsMenu, ProfileModal } from "@/features/dashboard"
 import { PublicControls, usePublicBoard, useClipboard } from "@/features/public-board"
 
 import { downloadSelectionAsPng } from "@/lib/export"
@@ -38,9 +38,10 @@ const PublicSidebar = dynamic(() => import("@/features/public-board").then((m) =
 
 export default function Dashboard() {
   const router = useRouter()
-  const { user, logout, isReady } = useAuth()
+  const { user, logout, isReady, updateUsername } = useAuth()
   const { t, locale } = useLanguage()
 
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [mode, setMode] = useState<"inbox" | "public">("inbox")
   const modeRef = useRef(mode)
   modeRef.current = mode
@@ -348,11 +349,21 @@ export default function Dashboard() {
                 }}
                 onFocusDrawing={focusDrawing}
                 onClearNotifications={handleClearNotifications}
+                onOpenProfile={() => setProfileModalOpen(true)}
                 onLogout={logout}
               />
             </div>
           }
         />
+
+        {user && (
+          <ProfileModal
+            user={user}
+            open={profileModalOpen}
+            onClose={() => setProfileModalOpen(false)}
+            onUpdateUsername={updateUsername}
+          />
+        )}
 
         <main className="flex-1 relative overflow-hidden select-none">
           <HintBar text={hintText} />

@@ -9,6 +9,7 @@ export interface User {
   name?: string
   avatar?: string
   username: string
+  legacyUsernames?: string[]
   locale?: UserLocale
   createdAt?: Date
   updatedAt?: Date

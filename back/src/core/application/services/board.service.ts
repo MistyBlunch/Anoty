@@ -42,7 +42,9 @@ export function createBoardService(deps: {
   const { userRepo, noteRepo, notifier } = deps
 
   const getRecipientInfo = async (username: string) => {
-    const user = await userRepo.findByUsername(username)
+    const user =
+      (await userRepo.findByUsernameOrLegacy?.(username)) ??
+      (await userRepo.findByUsername(username))
     if (!user) {
       throw new AppError(404, "Usuario no encontrado")
     }
@@ -57,7 +59,9 @@ export function createBoardService(deps: {
   }
 
   const getMyNotes = async (username: string) => {
-    const userExists = await userRepo.existsByUsername(username)
+    const userExists =
+      (await userRepo.existsByUsernameOrLegacy?.(username)) ??
+      (await userRepo.existsByUsername(username))
     if (!userExists) {
       throw new AppError(404, "Usuario no encontrado")
     }
@@ -73,7 +77,9 @@ export function createBoardService(deps: {
   }
 
   const markAllSeen = async (username: string) => {
-    const userExists = await userRepo.existsByUsername(username)
+    const userExists =
+      (await userRepo.existsByUsernameOrLegacy?.(username)) ??
+      (await userRepo.existsByUsername(username))
     if (!userExists) {
       throw new AppError(404, "Usuario no encontrado")
     }
@@ -99,17 +105,20 @@ export function createBoardService(deps: {
   }
 
   const sendNote = async (username: string, data: CreateNoteDTO) => {
-    const user = await userRepo.findByUsername(username)
+    const user =
+      (await userRepo.findByUsernameOrLegacy?.(username)) ??
+      (await userRepo.findByUsername(username))
     if (!user) {
       throw new AppError(404, "El usuario receptor no existe")
     }
 
+    const targetUsername = user.username || username
     const newNote = await noteRepo.create({
-      boardUsername: username,
+      boardUsername: targetUsername,
       ...data,
     })
 
-    notifier?.onNewDrawing?.(username)
+    notifier?.onNewDrawing?.(targetUsername)
 
     if (newNote.type === "drawing") {
       try {

@@ -176,6 +176,29 @@ const en = {
   lang_switch_label: "Language",
   lang_en: "English",
   lang_es: "Español",
+
+  // ─── Profile Modal ────────────────────────────────────────────────────────
+  profile_modal_title: "Profile Settings",
+  profile_modal_subtitle: "Customize your username and public links",
+  profile_username_label: "Username",
+  profile_username_placeholder: "e.g. my_name",
+  profile_username_hint: "3 to 20 characters (lowercase letters, numbers, hyphens and underscores)",
+  profile_username_available: "Username available!",
+  profile_username_taken: "This username is already taken",
+  profile_username_current: "This is your current username",
+  profile_username_invalid: "Invalid format (3-20 characters: a-z, 0-9, _, -)",
+  profile_username_reserved: "This username is reserved",
+  profile_links_preview: "Your public links will be:",
+  profile_link_send: "Link to receive drawings",
+  profile_link_public: "Public board link",
+  profile_zero_data_loss_badge: "100% Safe: No data loss",
+  profile_zero_data_loss_desc:
+    "All your received drawings, notes, and public board stay completely intact. Old links you shared will continue working seamlessly toward your board.",
+  profile_save_btn: "Save changes",
+  profile_saving: "Saving...",
+  profile_saved_toast: "Username updated successfully!",
+  profile_cancel: "Cancel",
+  profile_edit_tooltip: "Profile settings & change username",
 } as const
 
 export type TranslationKey = keyof typeof en

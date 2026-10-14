@@ -5,6 +5,7 @@ export interface AuthenticatedUser {
   email?: string
   avatar?: string
   locale?: "es" | "en"
+  legacyUsernames?: string[]
 }
 
 export interface RecipientUser {

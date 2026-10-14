@@ -187,6 +187,29 @@ const es: Translations = {
   lang_switch_label: "Idioma",
   lang_en: "English",
   lang_es: "Español",
+
+  // ─── Profile Modal ────────────────────────────────────────────────────────
+  profile_modal_title: "Ajustes de Perfil",
+  profile_modal_subtitle: "Personaliza tu nombre de usuario y enlaces públicos",
+  profile_username_label: "Nombre de usuario",
+  profile_username_placeholder: "ej. mi_nombre",
+  profile_username_hint: "Entre 3 y 20 caracteres (letras minúsculas, números, guiones y guiones bajos)",
+  profile_username_available: "¡Nombre disponible!",
+  profile_username_taken: "Este nombre de usuario ya está en uso",
+  profile_username_current: "Es tu nombre de usuario actual",
+  profile_username_invalid: "Formato inválido (3-20 caracteres: a-z, 0-9, _, -)",
+  profile_username_reserved: "Este nombre de usuario está reservado",
+  profile_links_preview: "Tus enlaces públicos serán:",
+  profile_link_send: "Enlace para recibir dibujos",
+  profile_link_public: "Enlace de tablero público",
+  profile_zero_data_loss_badge: "100% Seguro: Sin pérdida de datos",
+  profile_zero_data_loss_desc:
+    "Todos tus dibujos recibidos, notas y tablero público se conservan intactos. Los enlaces antiguos que hayas compartido seguirán funcionando y llegando a tu tablero.",
+  profile_save_btn: "Guardar cambios",
+  profile_saving: "Guardando...",
+  profile_saved_toast: "¡Nombre de usuario actualizado con éxito!",
+  profile_cancel: "Cancelar",
+  profile_edit_tooltip: "Ajustes de cuenta y cambiar username",
 }
 
 export default es

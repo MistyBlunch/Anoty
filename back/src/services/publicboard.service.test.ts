@@ -7,10 +7,13 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   return {
     findByGoogleIdOrEmail: async () => null,
     findByUsername: async () => null,
+    findByUsernameOrLegacy: async () => null,
     existsByUsername: async () => true,
+    existsByUsernameOrLegacy: async () => true,
     create: async (data) => data as any,
     save: async (user) => user,
     updateLocale: async () => null,
+    updateUsername: async () => null,
     ...overrides,
   }
 }
@@ -23,6 +26,7 @@ function makeBoardRepo(overrides: Partial<PublicBoardRepository> = {}): PublicBo
     create: async (data) => ({ _id: "b1", legacySlugs: [], ...data }) as any,
     save: async (board) => board,
     deleteById: async () => null,
+    updateOwnerUsername: async () => null,
     ...overrides,
   }
 }

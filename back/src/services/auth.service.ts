@@ -12,6 +12,10 @@ export function createAuthService(
   userRepo: UserRepository,
   verifier: GoogleIdTokenVerifier,
   signToken: (user: any) => Promise<string> = signSessionToken,
+  deps?: {
+    noteRepo?: any
+    publicBoardRepo?: any
+  },
 ) {
   return createCoreAuthService(
     userRepo as any,
@@ -28,5 +32,6 @@ export function createAuthService(
       },
     },
     signToken,
+    deps,
   )
 }

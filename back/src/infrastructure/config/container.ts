@@ -47,4 +47,8 @@ export const authService = createAuthService(
   mongoUserRepository,
   googleTokenVerifierAdapter,
   signSessionToken,
+  {
+    noteRepo: mongoNoteRepository,
+    publicBoardRepo: mongoPublicBoardRepository,
+  },
 )

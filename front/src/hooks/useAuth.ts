@@ -16,8 +16,13 @@ export function useAuth({ redirect = true }: UseAuthOptions = {}) {
     let cancelled = false
 
     if (process.env.NODE_ENV !== "production") {
-      const qToken = router.query.__dev_token as string | undefined
-      const qUser = router.query.__dev_user as string | undefined
+      let qToken = router.query.__dev_token as string | undefined
+      let qUser = router.query.__dev_user as string | undefined
+      if ((!qToken || !qUser) && typeof window !== "undefined") {
+        const sp = new URLSearchParams(window.location.search)
+        qToken = qToken || sp.get("__dev_token") || undefined
+        qUser = qUser || sp.get("__dev_user") || undefined
+      }
       if (qToken && qUser) {
         localStorage.setItem("token", qToken)
         localStorage.setItem("user", qUser)
@@ -33,10 +38,12 @@ export function useAuth({ redirect = true }: UseAuthOptions = {}) {
 
     try {
       const parsedUser = JSON.parse(saved) as AuthenticatedUser
-      api.get<{ success: boolean }>("/auth/me").then(({ success }) => {
+      api.get<{ success: boolean; user?: AuthenticatedUser }>("/auth/me").then(({ success, user: meUser }) => {
         if (cancelled) return
         if (success) {
-          setUser(parsedUser)
+          const activeUser = meUser || parsedUser
+          setUser(activeUser)
+          localStorage.setItem("user", JSON.stringify(activeUser))
         } else {
           localStorage.removeItem("token")
           localStorage.removeItem("user")
@@ -70,6 +77,24 @@ export function useAuth({ redirect = true }: UseAuthOptions = {}) {
     [],
   )
 
+  const updateUsername = useCallback(
+    async (newUsername: string) => {
+      const res = await api.patch<{
+        success: boolean
+        message: string
+        token?: string
+        user?: AuthenticatedUser
+      }>("/auth/username", { username: newUsername })
+
+      if (res.success && res.user && res.token) {
+        saveSession(res.user, res.token)
+        return { success: true, message: res.message }
+      }
+      return { success: false, message: res.message || "Error al actualizar" }
+    },
+    [saveSession],
+  )
+
   const logout = useCallback(() => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
@@ -78,5 +103,5 @@ export function useAuth({ redirect = true }: UseAuthOptions = {}) {
     router.push("/")
   }, [router])
 
-  return { user, setUser, saveSession, logout, isReady }
+  return { user, setUser, saveSession, updateUsername, logout, isReady }
 }

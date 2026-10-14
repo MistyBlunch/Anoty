@@ -1,6 +1,6 @@
 import { useState } from "react"
 import Image from "next/image"
-import { Trash2 } from "lucide-react"
+import { Trash2, Bell, Settings } from "lucide-react"
 import SvgSafe from "@/components/svg/SvgSafe"
 import type { Drawing } from "@/types/drawing"
 import type { NotificationsDropdownProps } from "@/types"
@@ -13,35 +13,23 @@ export default function NotificationsDropdown({
   onToggle,
   onFocus,
   onClear,
+  onOpenProfile,
 }: NotificationsDropdownProps) {
   const { t } = useLanguage()
   const [confirmClear, setConfirmClear] = useState(false)
   return (
     <div className="relative">
       <button
+        id="notifications-bell-btn"
         onClick={() => {
           setConfirmClear(false)
           onToggle()
         }}
-        className="relative flex items-center gap-1 sm:gap-2 bg-white border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium shadow-sm hover:border-teal-500/50 transition-colors cursor-pointer"
+        className="relative p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-500/50 shadow-sm transition-colors cursor-pointer"
         title={t("notifications_title")}
+        aria-label={t("notifications_title")}
       >
-        {user.avatar ? (
-          <Image
-            src={user.avatar}
-            alt="Avatar"
-            width={24}
-            height={24}
-            className="w-6 h-6 rounded-full"
-            referrerPolicy="no-referrer"
-            unoptimized
-          />
-        ) : (
-          <div className="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold">
-            {user.username.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <span className="hidden sm:inline font-bold text-slate-700">@{user.username}</span>
+        <Bell className="w-4 h-4" />
         {newArrivals.length > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
             {newArrivals.length}
@@ -63,11 +51,25 @@ export default function NotificationsDropdown({
               <div className="h-1 w-10 rounded-full bg-slate-200" />
             </div>
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">{t("notifications_new_drawings")}</span>
-              {newArrivals.length > 0 && (
-                <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-2 py-0.5">
-                  {newArrivals.length}
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">{t("notifications_new_drawings")}</span>
+                {newArrivals.length > 0 && (
+                  <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-2 py-0.5">
+                    {newArrivals.length}
+                  </span>
+                )}
+              </div>
+              {onOpenProfile && (
+                <button
+                  onClick={() => {
+                    onToggle()
+                    onOpenProfile()
+                  }}
+                  className="text-[11px] font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Settings className="w-3 h-3" />
+                  <span>{t("profile_modal_title")}</span>
+                </button>
               )}
             </div>
             <div className="max-h-[50dvh] overflow-y-auto sm:max-h-80 pb-[env(safe-area-inset-bottom)]">
