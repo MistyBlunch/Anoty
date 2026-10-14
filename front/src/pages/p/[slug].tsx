@@ -8,16 +8,18 @@ import { isNewerUpdatedAt } from "@/lib/realtime"
 import { translations, type Locale } from "@/lib/i18n"
 import type { Drawing } from "@/types/drawing"
 
-import { useZoomPan } from "@/hooks/useZoomPan"
-import { useFitToContent } from "@/hooks/useFitToContent"
-import { useRealtimeBoard } from "@/hooks/useRealtimeBoard"
+import {
+  NotesCanvas,
+  ZoomControls,
+  HintBar,
+  EmptyBoard,
+  useZoomPan,
+  useFitToContent,
+  useRealtimeBoard,
+} from "@/features/board"
 import { useLanguage } from "@/context/LanguageContext"
 
 import HeaderShell from "@/components/layout/HeaderShell"
-import NotesCanvas from "@/components/board/NotesCanvas"
-import ZoomControls from "@/components/board/ZoomControls"
-import HintBar from "@/components/board/HintBar"
-import EmptyBoard from "@/components/board/EmptyBoard"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
 import type { BoardDrag, PublicBoardProps } from "@/types"
 

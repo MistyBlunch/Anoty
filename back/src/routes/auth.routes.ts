@@ -1,14 +1,12 @@
 import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 import { googleAuthSchema } from "../schemas/auth.schema.js"
-import { mongoUserRepository } from "../repositories/user.repository.js"
-import { googleTokenVerifier } from "../services/google-token.service.js"
-import { createAuthService } from "../services/auth.service.js"
+import { mongoUserRepository } from "../infrastructure/adapters/out/persistence/mongo-user.repository.js"
+import { authService } from "../infrastructure/config/container.js"
 import { authMiddleware } from "../middleware/auth.middleware.js"
 import { AppError } from "../lib/error.js"
 
 const auth = new Hono()
-const authService = createAuthService(mongoUserRepository, googleTokenVerifier)
 
 // POST /auth/google - Autenticación con Google OAuth (id_token o access_token)
 auth.post(

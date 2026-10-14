@@ -1,30 +1,9 @@
 import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 import { createBoardSchema, updateBoardSchema } from "../schemas/publicboard.schema.js"
-import { mongoUserRepository } from "../repositories/user.repository.js"
-import { mongoPublicBoardRepository } from "../repositories/publicboard.repository.js"
-import { createPublicBoardService } from "../services/publicboard.service.js"
-import { wsHub, WS_BOARD_PREFIX } from "../lib/ws-hub.js"
+import { publicBoardService } from "../infrastructure/config/container.js"
 
 const publicboard = new Hono()
-const publicBoardService = createPublicBoardService({
-  boardRepo: mongoPublicBoardRepository,
-  userRepo: mongoUserRepository,
-  notifier: {
-    onBoardChange: (board) => {
-      const channel = `${WS_BOARD_PREFIX}${board.slug}`
-      if (board.isPublished) {
-        wsHub.broadcast(channel, {
-          type: "board-updated",
-          slug: board.slug,
-          updatedAt: board.updatedAt?.toISOString() ?? new Date().toISOString(),
-        })
-      } else {
-        wsHub.broadcast(channel, { type: "board-hidden", slug: board.slug })
-      }
-    },
-  },
-})
 
 const validationError = (result: { success: boolean; error?: any }, c: any) => {
   if (!result.success) {
