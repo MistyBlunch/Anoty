@@ -416,7 +416,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
 
     const additive = e.shiftKey || e.metaKey || e.ctrlKey
     if (additive) {
-      host.toggleSelect(d._id)
+      if (d._id) host.toggleSelect(d._id)
       return
     }
 
@@ -444,7 +444,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
       return
     }
 
-    host.setSelectedIds([d._id])
+    if (d._id) host.setSelectedIds([d._id])
     dragRef.current = {
       kind: "draw",
       startX: e.clientX,
@@ -463,7 +463,7 @@ export function useBoardGesture(host: BoardGestureHost): BoardGesture {
     if (host.getTool() === "marquee" && !host.getSelectedIds().includes(d._id)) return
     e.stopPropagation()
     if (e.button !== 0) return
-    host.setSelectedIds([d._id])
+    if (d._id) host.setSelectedIds([d._id])
     host.setConfirmDeleteId(null)
     dragRef.current = {
       kind: "resize",

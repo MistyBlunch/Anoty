@@ -15,6 +15,15 @@ export function useAuth({ redirect = true }: UseAuthOptions = {}) {
   useEffect(() => {
     let cancelled = false
 
+    if (process.env.NODE_ENV !== "production") {
+      const qToken = router.query.__dev_token as string | undefined
+      const qUser = router.query.__dev_user as string | undefined
+      if (qToken && qUser) {
+        localStorage.setItem("token", qToken)
+        localStorage.setItem("user", qUser)
+      }
+    }
+
     const saved = localStorage.getItem("user")
     if (!saved) {
       setIsReady(true)

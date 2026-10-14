@@ -152,6 +152,7 @@ export default function Dashboard() {
     getSelectedIds: () => selectedIdsRef.current,
     setSelectedIds,
     toggleSelect: (id: string) => {
+      if (!id) return
       setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
     },
     setConfirmDeleteId,
@@ -235,7 +236,7 @@ export default function Dashboard() {
       ? drawings.filter((d) => !pubBoardRef.current?.items.some((it) => it._id === d._id))
       : []
 
-  const selectedDrawings = displayDrawings.filter((d) => selectedIds.includes(d._id))
+  const selectedDrawings = displayDrawings.filter((d) => Boolean(d._id && selectedIds.includes(d._id)))
 
   const selectedMenuPos = useActionsMenuPosition(selectedDrawings, actionsMenuRef, view)
 
@@ -250,12 +251,17 @@ export default function Dashboard() {
   const focusDrawing = useCallback(
     (d: Drawing) => {
       setMode("inbox")
+      const current =
+        inboxDrawingsRef.current.find((item) => item._id === d._id) ||
+        displayRef.current.find((item) => item._id === d._id) ||
+        d
+
       markNoteSeen(d._id)
       if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current)
       setPulseId(d._id)
       pulseTimerRef.current = window.setTimeout(() => setPulseId(null), 3000)
-      focusOn(d)
-      setSelectedIds([d._id])
+      focusOn(current)
+      setSelectedIds([current._id || d._id])
       setConfirmDeleteId(null)
       setNotificationsOpen(false)
     },

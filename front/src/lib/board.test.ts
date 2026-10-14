@@ -306,6 +306,29 @@ describe("normalizeNotes", () => {
     expect(out).toHaveLength(1)
     expect(out[0]).toMatchObject({ _id: "d1", width: 520, height: 390, isSeen: false, positionSet: true, z: 2 })
   })
+
+  it("handles notes with id instead of _id and vice versa", () => {
+    const notes = [
+      { type: "drawing", id: "note-hex-1", content: "<svg/>" },
+      { type: "drawing", _id: "note-mongo-2", content: "<svg/>" },
+    ]
+    const out = normalizeNotes(notes)
+    expect(out[0]._id).toBe("note-hex-1")
+    expect(out[1]._id).toBe("note-mongo-2")
+  })
+
+  it("ensures selecting one note does not select all notes", () => {
+    const notes = [
+      { type: "drawing", _id: "note-1", content: "<svg/>" },
+      { type: "drawing", _id: "note-2", content: "<svg/>" },
+      { type: "drawing", _id: "note-3", content: "<svg/>" },
+    ]
+    const drawings = normalizeNotes(notes)
+    const selectedIds = ["note-1"]
+    const selected = drawings.filter((d) => Boolean(d._id && selectedIds.includes(d._id)))
+    expect(selected).toHaveLength(1)
+    expect(selected[0]._id).toBe("note-1")
+  })
 })
 
 describe("findVisibleFreeSlot", () => {

@@ -211,20 +211,25 @@ const fitViewport = (
   capZoom = 1.25,
   padding = 60,
 ): BoardViewState => {
-  const boxW = box.w
-  const boxH = box.h
+  const boxW = Math.max(1, Number(box.w) || DEFAULT_NOTE_W)
+  const boxH = Math.max(1, Number(box.h) || DEFAULT_NOTE_H)
+  const boxX = Number(box.x) || 0
+  const boxY = Number(box.y) || 0
   const fitX = (viewW - padding) / (boxW + padding)
   const fitY = (viewH - padding) / (boxH + padding)
   let zoom = Math.min(fitX, fitY)
   zoom = Math.min(zoom, capZoom)
   zoom = Math.max(zoom, MIN_ZOOM)
-  const centerX = box.x + boxW / 2
-  const centerY = box.y + boxH / 2
+  if (Number.isNaN(zoom)) zoom = 0.8
+  const centerX = boxX + boxW / 2
+  const centerY = boxY + boxH / 2
+  const panX = viewW / 2 - centerX * zoom
+  const panY = viewH / 2 - centerY * zoom
   return {
     zoom,
     pan: {
-      x: viewW / 2 - centerX * zoom,
-      y: viewH / 2 - centerY * zoom,
+      x: Number.isNaN(panX) ? 0 : panX,
+      y: Number.isNaN(panY) ? 0 : panY,
     },
   }
 }
@@ -237,12 +242,14 @@ export function computeContentView(viewW: number, viewH: number, items: Drawing[
   let maxX = -Infinity
   let maxY = -Infinity
   for (const d of items) {
-    const w = d.width || DEFAULT_NOTE_W
-    const h = d.height || DEFAULT_NOTE_H
-    minX = Math.min(minX, d.x)
-    minY = Math.min(minY, d.y)
-    maxX = Math.max(maxX, d.x + w)
-    maxY = Math.max(maxY, d.y + h)
+    const w = Number(d.width) || DEFAULT_NOTE_W
+    const h = Number(d.height) || DEFAULT_NOTE_H
+    const x = Number(d.x) || 0
+    const y = Number(d.y) || 0
+    minX = Math.min(minX, x)
+    minY = Math.min(minY, y)
+    maxX = Math.max(maxX, x + w)
+    maxY = Math.max(maxY, y + h)
   }
 
   return fitViewport(viewW, viewH, {
@@ -254,9 +261,11 @@ export function computeContentView(viewW: number, viewH: number, items: Drawing[
 }
 
 export function computeFocusView(viewW: number, viewH: number, d: Drawing): BoardViewState {
-  const w = d.width || DEFAULT_NOTE_W
-  const h = d.height || DEFAULT_NOTE_H
-  return fitViewport(viewW, viewH, { x: d.x, y: d.y, w, h })
+  const w = Number(d.width) || DEFAULT_NOTE_W
+  const h = Number(d.height) || DEFAULT_NOTE_H
+  const x = Number(d.x) || 0
+  const y = Number(d.y) || 0
+  return fitViewport(viewW, viewH, { x, y, w, h })
 }
 
 export function zoomTowardPoint(
@@ -294,8 +303,9 @@ export function normalizeBoardItems(arr: unknown[]): Drawing[] {
   return arr.map((raw) => {
     const it = raw as Record<string, unknown>
     const size = fitNoteSize(it.width as number | undefined, it.height as number | undefined)
+    const itemId = (it.noteId || it._id || it.id || "") as string
     return {
-      _id: it.noteId as string,
+      _id: itemId,
       content: (it.content as string) || "",
       x: Number(it.x) || 0,
       y: Number(it.y) || 0,
@@ -316,8 +326,9 @@ export function normalizeNotes(notes: unknown[]): Drawing[] {
     .map((raw) => {
       const n = raw as Record<string, unknown>
       const size = fitNoteSize(n.width as number | undefined, n.height as number | undefined)
+      const noteId = (n._id || n.id || "") as string
       return {
-        _id: n._id as string,
+        _id: noteId,
         content: (n.content as string) || "",
         x: Number(n.x) || 0,
         y: Number(n.y) || 0,
