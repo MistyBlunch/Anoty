@@ -172,6 +172,7 @@ const es: Translations = {
   send_another: "Dibujar otra nota",
   send_create_wall: "Crear mi propio tablero",
   send_button: (username: string) => `Enviar a @${username}`,
+  send_button_short: "Enviar",
   send_sending: "Enviando...",
   send_error_default: "No se pudo enviar el dibujo",
   send_backend_error: "No se pudo enviar el dibujo al servidor",

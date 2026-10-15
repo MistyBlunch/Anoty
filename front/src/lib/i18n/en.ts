@@ -161,6 +161,7 @@ const en = {
   send_another: "Draw another note",
   send_create_wall: "Create my own board",
   send_button: (username: string) => `Send to @${username}`,
+  send_button_short: "Send",
   send_sending: "Sending...",
   send_error_default: "Could not send the drawing",
   send_backend_error: "Could not send the drawing to the server",
