@@ -1,5 +1,4 @@
 import { useState } from "react"
-import Image from "next/image"
 import { Trash2, Bell, Settings } from "lucide-react"
 import SvgSafe from "@/components/svg/SvgSafe"
 import type { Drawing } from "@/types/drawing"

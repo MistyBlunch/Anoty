@@ -117,6 +117,8 @@ export default function SendNote({
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                     unoptimized
+                    loading="eager"
+                    priority
                   />
                 ) : (
                   <span className="text-lg sm:text-2xl font-extrabold text-white">

@@ -43,6 +43,8 @@ export default function HeaderActions({
             className="w-6 h-6 rounded-full"
             referrerPolicy="no-referrer"
             unoptimized
+            loading="eager"
+            priority
           />
         ) : (
           <div className="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold">
