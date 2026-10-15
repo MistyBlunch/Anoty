@@ -33,9 +33,17 @@ export class RedisPubSubWsBroker implements WsBrokerPort {
     this.instanceId = options.instanceId ?? randomUUID()
 
     const defaultOptions: RedisOptions = {
-      maxRetriesPerRequest: null,
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
       enableReadyCheck: true,
       lazyConnect: false,
+      retryStrategy(times) {
+        if (times > 3) {
+          console.warn("⚠️ [RedisWsBroker] Reintentos agotados al conectar con Redis.")
+          return null
+        }
+        return Math.min(times * 500, 2000)
+      },
       ...options.redisOptions,
     }
 

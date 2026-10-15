@@ -63,15 +63,22 @@ app.route("/", publicBoardRoutes)
 app.get("/ws", wsRoutes)
 
 const port = Number(process.env.PORT) || 3000
+const hostname = process.env.HOST || "0.0.0.0"
 
-console.log(`🚀 Server is running on http://localhost:${port}`)
+console.log(`🚀 Server is running on http://${hostname}:${port}`)
 console.log(`🔑 GOOGLE_CLIENT_ID cargado: ${process.env.GOOGLE_CLIENT_ID ? "SÍ ✅ (" + process.env.GOOGLE_CLIENT_ID.substring(0, 15) + "...)" : "NO ❌"}`)
 console.log(`📧 Notificaciones por correo: ${defaultEmailService.isConfigured() ? "ACTIVADAS ✅" : "DESACTIVADAS ❌ (proveedor de correo no configurado)"}`)
 
-serve({
-  fetch: app.fetch,
-  port,
-  websocket: {
-    server: new WebSocketServer({ noServer: true }),
+serve(
+  {
+    fetch: app.fetch,
+    port,
+    hostname,
+    websocket: {
+      server: new WebSocketServer({ noServer: true }),
+    },
   },
-})
+  (info) => {
+    console.log(`🚀 Server is listening on http://${info.address}:${info.port}`)
+  },
+)

@@ -165,10 +165,10 @@ export default function SendNote({
                       t("send_sending")
                     ) : (
                       <>
-                        <span className="hidden sm:inline">
+                        <span className="hidden md:inline">
                           {t("send_button", username)}
                         </span>
-                        <span className="sm:hidden">
+                        <span className="md:hidden">
                           {t("send_button_short")}
                         </span>
                       </>
