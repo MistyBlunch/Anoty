@@ -11,6 +11,7 @@ import {
   createAuthService,
   DrawingNotificationService,
 } from "../../core/application/services/index.js"
+import type { DrawingCreatedEvent, PublicBoard } from "../../core/domain/index.js"
 
 export const drawingNotificationService = new DrawingNotificationService(defaultEmailService)
 
@@ -18,9 +19,9 @@ export const boardService = createBoardService({
   userRepo: mongoUserRepository,
   noteRepo: mongoNoteRepository,
   notifier: {
-    onNewDrawing: (username) =>
+    onNewDrawing: (username: string) =>
       wsHub.broadcast(`${WS_USER_PREFIX}${username}`, { type: "new-drawing" }),
-    onDrawingCreated: (event) => drawingNotificationService.handle(event),
+    onDrawingCreated: (event: DrawingCreatedEvent) => drawingNotificationService.handle(event),
   },
 })
 
@@ -28,7 +29,7 @@ export const publicBoardService = createPublicBoardService({
   boardRepo: mongoPublicBoardRepository,
   userRepo: mongoUserRepository,
   notifier: {
-    onBoardChange: (board) => {
+    onBoardChange: (board: PublicBoard) => {
       const channel = `${WS_BOARD_PREFIX}${board.slug}`
       if (board.isPublished) {
         wsHub.broadcast(channel, {
