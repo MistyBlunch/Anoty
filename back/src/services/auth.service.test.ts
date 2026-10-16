@@ -182,6 +182,36 @@ describe("auth.service", () => {
       })
     })
 
+    it("permite al usuario recuperar un nombre de usuario que está en sus propios legacyUsernames", async () => {
+      const user = {
+        _id: "u1",
+        username: "mistyblunchy",
+        legacyUsernames: ["mistyblunch"],
+      }
+      const updateUsername = vi.fn(async (_id, oldU, newU) => {
+        const legacy = new Set(user.legacyUsernames)
+        legacy.add(oldU)
+        legacy.delete(newU)
+        return { ...user, username: newU, legacyUsernames: Array.from(legacy) }
+      })
+
+      const service = createAuthService(
+        makeUserRepo({
+          existsByUsernameOrLegacy: async (u, excludeId) => {
+            if (u === "mistyblunch" && excludeId === "u1") return false
+            return u === "mistyblunch"
+          },
+          updateUsername: updateUsername as any,
+        }),
+        verifier,
+      )
+
+      const res = await service.changeUsername("u1", "mistyblunchy", "mistyblunch")
+      expect(res.success).toBe(true)
+      expect(res.user.username).toBe("mistyblunch")
+      expect(res.user.legacyUsernames).toEqual(["mistyblunchy"])
+    })
+
     it("no realiza cambios si el nombre es el mismo y retorna el usuario", async () => {
       const service = createAuthService(
         makeUserRepo({
@@ -202,6 +232,10 @@ describe("auth.service", () => {
       const service = createAuthService(
         makeUserRepo({
           existsByUsername: async (u) => u === "existing",
+          existsByUsernameOrLegacy: async (u, excludeId) => {
+            if (u === "mistyblunch" && excludeId === "u1") return false
+            return u === "existing" || u === "mistyblunch"
+          },
         }),
         verifier,
       )
@@ -211,6 +245,10 @@ describe("auth.service", () => {
       expect((await service.isUsernameAvailable("admin")).available).toBe(false)
       expect((await service.isUsernameAvailable("ab")).available).toBe(false)
       expect((await service.isUsernameAvailable("free_user_123")).available).toBe(true)
+      // El usuario u1 puede recuperar su propio username legacy
+      expect((await service.isUsernameAvailable("mistyblunch", "mistyblunchy", "u1")).available).toBe(true)
+      // Otro usuario no puede tomar el username legacy de u1
+      expect((await service.isUsernameAvailable("mistyblunch", "other_user", "u2")).available).toBe(false)
     })
   })
 })

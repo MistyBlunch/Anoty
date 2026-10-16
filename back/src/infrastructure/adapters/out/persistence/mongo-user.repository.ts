@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 import { User as UserModel } from "../../../../models/user.model.js"
 import type { UserRepositoryPort } from "../../../../core/application/ports/out/user-repository.port.js"
 import type { User, UserLocale } from "../../../../core/domain/index.js"
@@ -23,16 +24,32 @@ export class MongoUserRepository implements UserRepositoryPort {
     return doc ? userMapper.toDomain(doc) : null
   }
 
-  async existsByUsername(username: string): Promise<boolean> {
-    const found = await UserModel.exists({ username })
-    return Boolean(found)
+  async existsByUsername(username: string, excludeUserId?: string): Promise<boolean> {
+    const filter: any = { username }
+    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
+      filter._id = { $ne: excludeUserId }
+    }
+    const found = await UserModel.exists(filter)
+    if (!found) return false
+    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
+      return false
+    }
+    return true
   }
 
-  async existsByUsernameOrLegacy(username: string): Promise<boolean> {
-    const found = await UserModel.exists({
+  async existsByUsernameOrLegacy(username: string, excludeUserId?: string): Promise<boolean> {
+    const filter: any = {
       $or: [{ username }, { legacyUsernames: username }],
-    })
-    return Boolean(found)
+    }
+    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
+      filter._id = { $ne: excludeUserId }
+    }
+    const found = await UserModel.exists(filter)
+    if (!found) return false
+    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
+      return false
+    }
+    return true
   }
 
   async create(data: Partial<User>): Promise<User> {
@@ -69,6 +86,7 @@ export class MongoUserRepository implements UserRepositoryPort {
     if (oldUsername && oldUsername !== newUsername) {
       legacy.add(oldUsername)
     }
+    legacy.delete(newUsername)
     doc.username = newUsername
     doc.legacyUsernames = Array.from(legacy)
     await doc.save()

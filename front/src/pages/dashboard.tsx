@@ -429,10 +429,12 @@ export default function Dashboard() {
           />
 
           {(isLoading || (mode === "public" && boardLoading)) && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
-              <div className="text-center">
-                <RefreshCw className="w-8 h-8 text-teal-500 animate-spin mx-auto mb-3" />
-                <p className="text-slate-600 text-sm">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/5 backdrop-blur-[1px]">
+              <div className="flex flex-col items-center gap-3 px-6 py-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-2xl shadow-slate-900/10 text-center animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shadow-sm">
+                  <RefreshCw className="w-5 h-5 text-teal-600 animate-spin" />
+                </div>
+                <p className="text-sm font-semibold text-slate-700 tracking-tight">
                   {mode === "public" ? t("loading_public_board") : t("loading_inbox")}
                 </p>
               </div>

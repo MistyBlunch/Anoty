@@ -52,6 +52,7 @@ export function createAuthService(
   const isUsernameAvailable = async (
     requested: string,
     currentUsername?: string,
+    currentUserId?: string,
   ): Promise<{ available: boolean; reason?: string }> => {
     if (!requested || typeof requested !== "string") {
       return { available: false, reason: "El nombre de usuario es requerido" }
@@ -85,8 +86,8 @@ export function createAuthService(
       return { available: false, reason: "Este nombre de usuario está reservado" }
     }
     const exists = userRepo.existsByUsernameOrLegacy
-      ? await userRepo.existsByUsernameOrLegacy(normalized)
-      : await userRepo.existsByUsername(normalized)
+      ? await userRepo.existsByUsernameOrLegacy(normalized, currentUserId)
+      : await userRepo.existsByUsername(normalized, currentUserId)
     if (exists) {
       return { available: false, reason: "Este nombre de usuario ya está en uso" }
     }
@@ -150,8 +151,8 @@ export function createAuthService(
     }
 
     const isTaken = userRepo.existsByUsernameOrLegacy
-      ? await userRepo.existsByUsernameOrLegacy(newUsername)
-      : await userRepo.existsByUsername(newUsername)
+      ? await userRepo.existsByUsernameOrLegacy(newUsername, userId)
+      : await userRepo.existsByUsername(newUsername, userId)
 
     if (isTaken) {
       throw new AppError(409, "El nombre de usuario ya está en uso")
@@ -164,7 +165,12 @@ export function createAuthService(
     } else {
       const user = await userRepo.findByUsername(oldUsername)
       if (user) {
-        user.legacyUsernames = [...(user.legacyUsernames || []), oldUsername]
+        const legacy = new Set(user.legacyUsernames || [])
+        if (oldUsername && oldUsername !== newUsername) {
+          legacy.add(oldUsername)
+        }
+        legacy.delete(newUsername)
+        user.legacyUsernames = Array.from(legacy)
         user.username = newUsername
         updatedUser = await userRepo.save(user)
       }
