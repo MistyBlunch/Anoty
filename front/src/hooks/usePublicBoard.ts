@@ -23,7 +23,8 @@ interface UsePublicBoardOutput {
   savedFeed: boolean
   saveToast: string | null
   pubBoardRef: MutableRefObject<PublicBoardDraft | null>
-  loadPublicBoard: (username: string) => Promise<void>
+  lastSavedAtRef: MutableRefObject<number>
+  loadPublicBoard: (username: string, options?: { silent?: boolean }) => Promise<void>
   saveDraftItems: (items: Drawing[]) => void
   savePublicBoard: () => void
   togglePublish: () => void
@@ -67,6 +68,8 @@ export function usePublicBoard({
   const [saveToast, setSaveToast] = useState<string | null>(null)
   const pubBoardRef = useRef<PublicBoardDraft | null>(null)
   pubBoardRef.current = board
+  const lastSavedAtRef = useRef<number>(0)
+  const initialFitDoneRef = useRef(false)
 
   const draftTimerRef = useRef<NodeJS.Timeout | null>(null)
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -99,8 +102,10 @@ export function usePublicBoard({
   }, [])
 
   const loadPublicBoard = useCallback(
-    async (username: string) => {
-      setBoardLoading(true)
+    async (username: string, options?: { silent?: boolean }) => {
+      if (!options?.silent) {
+        setBoardLoading(true)
+      }
       try {
         const data = await api.get(`/public-boards/${username}`)
         let b = data.success && data.board ? (data.board as unknown as Record<string, unknown>) : null
@@ -130,11 +135,19 @@ export function usePublicBoard({
       } catch (error) {
         console.error("Error al cargar el tablero público:", error)
       } finally {
-        setBoardLoading(false)
+        if (!options?.silent) {
+          setBoardLoading(false)
+        }
       }
     },
     [],
   )
+
+  useEffect(() => {
+    if (mode !== "public") {
+      initialFitDoneRef.current = false
+    }
+  }, [mode])
 
   useEffect(() => {
     if (!user || mode !== "public") return
@@ -142,10 +155,11 @@ export function usePublicBoard({
   }, [user, mode, loadPublicBoard])
 
   useEffect(() => {
-    if (mode === "public" && board && !boardLoading) {
+    if (mode === "public" && board && !boardLoading && !initialFitDoneRef.current) {
+      initialFitDoneRef.current = true
       fitToContent(board.items)
     }
-  }, [mode, board?._id, boardLoading, fitToContent])
+  }, [mode, board, boardLoading, fitToContent])
 
   const savePublicBoard = useCallback(() => {
     const b = pubBoardRef.current
@@ -164,6 +178,7 @@ export function usePublicBoard({
 
     // 1. Actualización inmediata y optimista en el tablero que estás editando
     clearDraftTouched(b._id)
+    lastSavedAtRef.current = Date.now()
     setBoard((prev) =>
       prev
         ? {
@@ -185,11 +200,15 @@ export function usePublicBoard({
       })
       .then((data) => {
         if (data.success) {
+          const newUpdatedAt = ((data.board as Record<string, unknown> | undefined)?.updatedAt as string)
+          if (newUpdatedAt && pubBoardRef.current) {
+            pubBoardRef.current.updatedAt = newUpdatedAt
+          }
           setBoard((prev) =>
             prev
               ? {
                   ...prev,
-                  updatedAt: ((data.board as Record<string, unknown> | undefined)?.updatedAt as string) || prev.updatedAt,
+                  updatedAt: newUpdatedAt || prev.updatedAt,
                 }
               : prev,
           )
@@ -235,6 +254,7 @@ export function usePublicBoard({
     savedFeed,
     saveToast,
     pubBoardRef,
+    lastSavedAtRef,
     loadPublicBoard,
     saveDraftItems,
     savePublicBoard,

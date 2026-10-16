@@ -102,6 +102,7 @@ export default function Dashboard() {
     savedFeed,
     saveToast,
     pubBoardRef,
+    lastSavedAtRef,
     loadPublicBoard,
     saveDraftItems,
     savePublicBoard,
@@ -118,8 +119,11 @@ export default function Dashboard() {
   useRealtimeBoard({
     slug: mode === "public" ? (board?.slug ?? null) : null,
     onBoardUpdated: (updatedAt) => {
+      if (savingBoard || Date.now() - lastSavedAtRef.current < 10000) return
       const current = pubBoardRef.current?.updatedAt
-      if (isNewerUpdatedAt(current, updatedAt)) loadPublicBoard(user?.username ?? "")
+      if (isNewerUpdatedAt(current, updatedAt)) {
+        loadPublicBoard(user?.username ?? "", { silent: true })
+      }
     },
     onBoardHidden: () => undefined,
   })
