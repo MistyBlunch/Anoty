@@ -107,4 +107,24 @@ describe("RedisPubSubWsBroker", () => {
     const broker = createWsBroker()
     expect(broker).toBeInstanceOf(InMemoryWsBroker)
   })
+
+  it("createWsBroker detecta URLs http/https de Upstash REST y cae a InMemoryWsBroker de forma segura", () => {
+    const broker = createWsBroker({ redisUrl: "https://viable-maggot-12345.upstash.io" })
+    expect(broker).toBeInstanceOf(InMemoryWsBroker)
+  })
+
+  it("createWsBroker limpia comillas accidentales en URLs", () => {
+    const broker = createWsBroker({ redisUrl: '"https://viable-maggot-12345.upstash.io"' })
+    expect(broker).toBeInstanceOf(InMemoryWsBroker)
+  })
+
+  it("createWsBroker extrae url válida si el usuario pegó el comando redis-cli", () => {
+    // Si viene el comando redis-cli con http (invalido), cae a memoria
+    const broker = createWsBroker({
+      redisUrl: "redis-cli --tls -u https://emerging-dog-217848.upstash.io",
+    })
+    expect(broker).toBeInstanceOf(InMemoryWsBroker)
+  })
 })
+
+

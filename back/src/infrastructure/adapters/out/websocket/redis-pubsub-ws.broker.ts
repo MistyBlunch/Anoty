@@ -37,6 +37,10 @@ export class RedisPubSubWsBroker implements WsBrokerPort {
       connectTimeout: 5000,
       enableReadyCheck: true,
       lazyConnect: false,
+      tls:
+        redisUrl?.startsWith("rediss://") || redisUrl?.includes("upstash.io")
+          ? { rejectUnauthorized: false }
+          : undefined,
       retryStrategy(times) {
         if (times > 3) {
           console.warn("⚠️ [RedisWsBroker] Reintentos agotados al conectar con Redis.")
@@ -57,6 +61,14 @@ export class RedisPubSubWsBroker implements WsBrokerPort {
       this.pubClient = new Redis(defaultOptions)
       this.subClient = new Redis(defaultOptions)
     }
+
+    // Registrar manejadores de error INMEDIATAMENTE tras la creación de las instancias
+    this.pubClient.on("error", (err: any) => {
+      console.warn("⚠️ [RedisWsBroker] Advertencia en conexión de publicación Redis:", err?.message)
+    })
+    this.subClient.on("error", (err: any) => {
+      console.warn("⚠️ [RedisWsBroker] Advertencia en conexión de suscripción Redis:", err?.message)
+    })
 
     this.initSubscriber()
   }
@@ -83,13 +95,6 @@ export class RedisPubSubWsBroker implements WsBrokerPort {
       } catch (err) {
         console.error("❌ [RedisWsBroker] Error al parsear mensaje de Redis:", err)
       }
-    })
-
-    this.subClient?.on?.("error", (err: any) => {
-      console.warn("⚠️ [RedisWsBroker] Advertencia en conexión de suscripción Redis:", err?.message)
-    })
-    this.pubClient?.on?.("error", (err: any) => {
-      console.warn("⚠️ [RedisWsBroker] Advertencia en conexión de publicación Redis:", err?.message)
     })
   }
 
