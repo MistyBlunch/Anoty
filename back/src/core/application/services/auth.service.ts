@@ -61,10 +61,10 @@ export function createAuthService(
     if (currentUsername && normalized === currentUsername.toLowerCase()) {
       return { available: true, reason: "Es tu nombre de usuario actual" }
     }
-    if (!/^[a-z0-9_-]{3,20}$/.test(normalized)) {
+    if (!/^[a-z0-9_-]{1,20}$/.test(normalized)) {
       return {
         available: false,
-        reason: "Solo letras, números, guiones y guiones bajos (3-20 caracteres)",
+        reason: "Solo letras, números, guiones y guiones bajos (1-20 caracteres)",
       }
     }
     const reserved = [
@@ -124,10 +124,10 @@ export function createAuthService(
       }
     }
 
-    if (!/^[a-z0-9_-]{3,20}$/.test(newUsername)) {
+    if (!/^[a-z0-9_-]{1,20}$/.test(newUsername)) {
       throw new AppError(
         400,
-        "El nombre de usuario debe tener entre 3 y 20 caracteres y solo puede contener letras, números, guiones y guiones bajos",
+        "El nombre de usuario debe tener entre 1 y 20 caracteres y solo puede contener letras, números, guiones y guiones bajos",
       )
     }
 

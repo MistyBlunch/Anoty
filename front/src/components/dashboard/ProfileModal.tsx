@@ -83,7 +83,7 @@ export default function ProfileModal({
         return
       }
 
-      if (!/^[a-z0-9_-]{3,20}$/.test(clean)) {
+      if (!/^[a-z0-9_-]{1,20}$/.test(clean)) {
         setCheckResult({
           available: false,
           reason: t("profile_username_invalid"),

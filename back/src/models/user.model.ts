@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema<IUser>({
     unique: true,
     trim: true,
     lowercase: true,
-    minlength: [3, "El nombre de usuario debe tener al menos 3 caracteres"],
+    minlength: [1, "El nombre de usuario debe tener al menos 1 caracter"],
   },
   legacyUsernames: {
     type: [String],
