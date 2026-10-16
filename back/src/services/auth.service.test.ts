@@ -150,12 +150,31 @@ describe("auth.service", () => {
     it("rechaza si el username tiene caracteres inválidos o longitud incorrecta", async () => {
       const service = createAuthService(makeUserRepo(), verifier)
 
-      await expect(service.changeUsername("u1", "emma", "ab")).rejects.toMatchObject({
+      await expect(service.changeUsername("u1", "emma", "a".repeat(21))).rejects.toMatchObject({
         status: 400,
       })
       await expect(service.changeUsername("u1", "emma", "inv@lid!")).rejects.toMatchObject({
         status: 400,
       })
+    })
+
+    it("acepta nombres de usuario cortos de 1 o 2 caracteres como jd o x", async () => {
+      const updateUsername = vi.fn(async (_id, _oldU, newU) => ({
+        _id: "u1",
+        username: newU,
+        legacyUsernames: ["emma"],
+      }))
+      const service = createAuthService(
+        makeUserRepo({
+          existsByUsername: async () => false,
+          updateUsername: updateUsername as any,
+        }),
+        verifier,
+      )
+
+      const res = await service.changeUsername("u1", "emma", "jd")
+      expect(res.success).toBe(true)
+      expect(res.user.username).toBe("jd")
     })
 
     it("rechaza nombres de usuario reservados", async () => {
@@ -243,7 +262,11 @@ describe("auth.service", () => {
       expect((await service.isUsernameAvailable("existing")).available).toBe(false)
       expect((await service.isUsernameAvailable("existing", "existing")).available).toBe(true)
       expect((await service.isUsernameAvailable("admin")).available).toBe(false)
-      expect((await service.isUsernameAvailable("ab")).available).toBe(false)
+      expect((await service.isUsernameAvailable("ab")).available).toBe(true)
+      expect((await service.isUsernameAvailable("jd")).available).toBe(true)
+      expect((await service.isUsernameAvailable("x")).available).toBe(true)
+      expect((await service.isUsernameAvailable("a".repeat(21))).available).toBe(false)
+      expect((await service.isUsernameAvailable("")).available).toBe(false)
       expect((await service.isUsernameAvailable("free_user_123")).available).toBe(true)
       // El usuario u1 puede recuperar su propio username legacy
       expect((await service.isUsernameAvailable("mistyblunch", "mistyblunchy", "u1")).available).toBe(true)
