@@ -5,13 +5,20 @@ import type { NoteRepository } from "../repositories/note.repository.js"
 import { AppError } from "../lib/error.js"
 
 function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
+  const findByUsername =
+    overrides.findByUsername ||
+    (async () => ({ _id: "u1", username: "emma", name: "Emma", avatar: "" }) as any)
+  const existsByUsername = overrides.existsByUsername || (async () => true)
   return {
     findByGoogleIdOrEmail: async () => null,
-    findByUsername: async () => ({ _id: "u1", username: "emma", name: "Emma", avatar: "" }) as any,
-    existsByUsername: async () => true,
+    findByUsername,
+    findByUsernameOrLegacy: overrides.findByUsernameOrLegacy || findByUsername,
+    existsByUsername,
+    existsByUsernameOrLegacy: overrides.existsByUsernameOrLegacy || existsByUsername,
     create: async (data) => data as any,
     save: async (user) => user,
     updateLocale: async () => null,
+    updateUsername: async () => null,
     ...overrides,
   }
 }
@@ -25,6 +32,7 @@ function makeNoteRepo(overrides: Partial<NoteRepository> = {}): NoteRepository {
     findById: async () => null,
     save: async (note) => note,
     deleteById: async () => null,
+    updateBoardUsername: async () => 0,
     ...overrides,
   }
 }
@@ -198,5 +206,36 @@ describe("board.service", () => {
     await svc.sendNote("emma", { type: "text", content: "Hola!" } as any)
 
     expect(onDrawingCreated).not.toHaveBeenCalled()
+  })
+
+  it("getRecipientInfo resuelve al usuario mediante legacy username", async () => {
+    const user = { _id: "u1", username: "emma_new", name: "Emma", legacyUsernames: ["emma_old"] }
+    const svc = service({
+      findByUsername: async () => null,
+      findByUsernameOrLegacy: async (u: string) => (u === "emma_old" ? (user as any) : null),
+    })
+
+    const res = await svc.getRecipientInfo("emma_old")
+    expect(res.success).toBe(true)
+    expect(res.user.username).toBe("emma_new")
+  })
+
+  it("sendNote asigna el dibujo al active username cuando se envía usando un legacy username", async () => {
+    const user = { _id: "u1", username: "emma_new", legacyUsernames: ["emma_old"] }
+    const create = vi.fn(async (data: any) => ({ _id: "n1", ...data }) as any)
+    const onNewDrawing = vi.fn()
+    const svc = service(
+      {
+        findByUsername: async () => null,
+        findByUsernameOrLegacy: async (u: string) => (u === "emma_old" ? (user as any) : null),
+      },
+      { create },
+      { onNewDrawing },
+    )
+
+    const res = await svc.sendNote("emma_old", { type: "drawing", content: "<svg/>" } as any)
+    expect(create.mock.calls[0][0].boardUsername).toBe("emma_new")
+    expect(onNewDrawing).toHaveBeenCalledWith("emma_new")
+    expect(res.recipient.username).toBe("emma_new")
   })
 })

@@ -7,6 +7,7 @@ export interface PublicBoardRepository {
   create(data: Partial<IPublicBoard>): Promise<IPublicBoard>
   save(board: IPublicBoard): Promise<IPublicBoard>
   deleteById(id: string): Promise<IPublicBoard | null>
+  updateOwnerUsername(oldUsername: string, newUsername: string): Promise<IPublicBoard | null>
 }
 
 export const mongoPublicBoardRepository: PublicBoardRepository = {
@@ -28,5 +29,25 @@ export const mongoPublicBoardRepository: PublicBoardRepository = {
   },
   async deleteById(id) {
     return PublicBoard.findByIdAndDelete(id)
+  },
+  async updateOwnerUsername(oldUsername, newUsername) {
+    const doc = await PublicBoard.findOne({
+      $or: [{ ownerUsername: oldUsername }, { slug: oldUsername }, { legacySlugs: oldUsername }],
+    })
+    if (!doc) return null
+
+    const legacy = new Set(doc.legacySlugs || [])
+    if (doc.slug && doc.slug !== newUsername) {
+      legacy.add(doc.slug)
+    }
+    if (oldUsername && oldUsername !== newUsername) {
+      legacy.add(oldUsername)
+    }
+
+    doc.ownerUsername = newUsername
+    doc.slug = newUsername
+    doc.legacySlugs = Array.from(legacy)
+    await doc.save()
+    return doc
   },
 }

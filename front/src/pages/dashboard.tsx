@@ -1,46 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import Head from "next/head"
-import { RefreshCw, Copy, Check } from "lucide-react"
-import { findVisibleFreeSlot, hintForTool, type Drawing } from "@/lib/board"
+import dynamic from "next/dynamic"
+import { RefreshCw, Copy, Check, CheckCircle2 } from "lucide-react"
+import { useAuth } from "@/features/auth"
+import {
+  NotesCanvas,
+  BoardControls,
+  EmptyBoard,
+  HintBar,
+  MarqueeOverlay,
+  useZoomPan,
+  useFitToContent,
+  useDrawings,
+  useRealtimeBoard,
+  useRealtimeNotifications,
+  useBoardGesture,
+  useUndoRedo,
+  useKeyboardShortcuts,
+  useSelectionActions,
+  useActionsMenuPosition,
+  findVisibleFreeSlot,
+  hintForTool,
+  type Drawing,
+} from "@/features/board"
+import { HeaderActions, ActionsMenu, ProfileModal } from "@/features/dashboard"
+import { PublicControls, usePublicBoard, useClipboard } from "@/features/public-board"
+
 import { downloadSelectionAsPng } from "@/lib/export"
 import { isNewerUpdatedAt } from "@/lib/realtime"
-
-import { useAuth } from "@/hooks/useAuth"
-import { useZoomPan } from "@/hooks/useZoomPan"
-import { useFitToContent } from "@/hooks/useFitToContent"
-import { useClipboard } from "@/hooks/useClipboard"
-import { useDrawings } from "@/hooks/useDrawings"
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications"
-import { useRealtimeBoard } from "@/hooks/useRealtimeBoard"
-import { usePublicBoard } from "@/hooks/usePublicBoard"
-import { useBoardGesture } from "@/hooks/useBoardGesture"
-import { useUndoRedo } from "@/hooks/useUndoRedo"
-import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
-import { useSelectionActions } from "@/hooks/useSelectionActions"
-import { useActionsMenuPosition } from "@/hooks/useActionsMenuPosition"
 import { useLanguage } from "@/context/LanguageContext"
-
 import HeaderShell from "@/components/layout/HeaderShell"
-import HintBar from "@/components/board/HintBar"
-import NotesCanvas from "@/components/board/NotesCanvas"
-import BoardControls from "@/components/board/BoardControls"
-import EmptyBoard from "@/components/board/EmptyBoard"
-import MarqueeOverlay from "@/components/board/MarqueeOverlay"
-import ActionsMenu from "@/components/dashboard/ActionsMenu"
-import dynamic from "next/dynamic"
-import HeaderActions from "@/components/dashboard/HeaderActions"
-import PublicControls from "@/components/dashboard/PublicControls"
 
-const PublicSidebar = dynamic(() => import("@/components/dashboard/PublicSidebar"), {
+const PublicSidebar = dynamic(() => import("@/features/public-board").then((m) => m.PublicSidebar), {
   ssr: false,
 })
 
 export default function Dashboard() {
   const router = useRouter()
-  const { user, logout, isReady } = useAuth()
+  const { user, logout, isReady, updateUsername } = useAuth()
   const { t, locale } = useLanguage()
 
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [mode, setMode] = useState<"inbox" | "public">("inbox")
   const modeRef = useRef(mode)
   modeRef.current = mode
@@ -99,7 +100,9 @@ export default function Dashboard() {
     setBoardTitle,
     savingBoard,
     savedFeed,
+    saveToast,
     pubBoardRef,
+    lastSavedAtRef,
     loadPublicBoard,
     saveDraftItems,
     savePublicBoard,
@@ -116,8 +119,11 @@ export default function Dashboard() {
   useRealtimeBoard({
     slug: mode === "public" ? (board?.slug ?? null) : null,
     onBoardUpdated: (updatedAt) => {
+      if (savingBoard || Date.now() - lastSavedAtRef.current < 10000) return
       const current = pubBoardRef.current?.updatedAt
-      if (isNewerUpdatedAt(current, updatedAt)) loadPublicBoard(user?.username ?? "")
+      if (isNewerUpdatedAt(current, updatedAt)) {
+        loadPublicBoard(user?.username ?? "", { silent: true })
+      }
     },
     onBoardHidden: () => undefined,
   })
@@ -152,6 +158,7 @@ export default function Dashboard() {
     getSelectedIds: () => selectedIdsRef.current,
     setSelectedIds,
     toggleSelect: (id: string) => {
+      if (!id) return
       setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
     },
     setConfirmDeleteId,
@@ -235,7 +242,7 @@ export default function Dashboard() {
       ? drawings.filter((d) => !pubBoardRef.current?.items.some((it) => it._id === d._id))
       : []
 
-  const selectedDrawings = displayDrawings.filter((d) => selectedIds.includes(d._id))
+  const selectedDrawings = displayDrawings.filter((d) => Boolean(d._id && selectedIds.includes(d._id)))
 
   const selectedMenuPos = useActionsMenuPosition(selectedDrawings, actionsMenuRef, view)
 
@@ -250,12 +257,17 @@ export default function Dashboard() {
   const focusDrawing = useCallback(
     (d: Drawing) => {
       setMode("inbox")
+      const current =
+        inboxDrawingsRef.current.find((item) => item._id === d._id) ||
+        displayRef.current.find((item) => item._id === d._id) ||
+        d
+
       markNoteSeen(d._id)
       if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current)
       setPulseId(d._id)
       pulseTimerRef.current = window.setTimeout(() => setPulseId(null), 3000)
-      focusOn(d)
-      setSelectedIds([d._id])
+      focusOn(current)
+      setSelectedIds([current._id || d._id])
       setConfirmDeleteId(null)
       setNotificationsOpen(false)
     },
@@ -342,14 +354,34 @@ export default function Dashboard() {
                 }}
                 onFocusDrawing={focusDrawing}
                 onClearNotifications={handleClearNotifications}
+                onOpenProfile={() => setProfileModalOpen(true)}
                 onLogout={logout}
               />
             </div>
           }
         />
 
+        {user && (
+          <ProfileModal
+            user={user}
+            open={profileModalOpen}
+            onClose={() => setProfileModalOpen(false)}
+            onUpdateUsername={updateUsername}
+          />
+        )}
+
         <main className="flex-1 relative overflow-hidden select-none">
           <HintBar text={hintText} />
+
+          {saveToast && (
+            <div
+              id="public-board-save-toast"
+              className="fixed top-16 sm:top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs sm:text-sm font-bold shadow-xl shadow-emerald-950/20 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none"
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
+              <span>{saveToast}</span>
+            </div>
+          )}
 
           {mode === "public" && (
             <PublicSidebar

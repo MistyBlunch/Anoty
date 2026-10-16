@@ -22,6 +22,7 @@ export interface HeaderActionsProps {
   onToggleNotifications: () => void
   onFocusDrawing: (d: Drawing) => void
   onClearNotifications: () => void
+  onOpenProfile?: () => void
   onLogout: () => void
 }
 
@@ -32,6 +33,7 @@ export interface NotificationsDropdownProps {
   onToggle: () => void
   onFocus: (d: Drawing) => void
   onClear: () => void
+  onOpenProfile?: () => void
 }
 
 export interface ActionsMenuProps {

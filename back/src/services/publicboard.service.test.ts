@@ -7,10 +7,13 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   return {
     findByGoogleIdOrEmail: async () => null,
     findByUsername: async () => null,
+    findByUsernameOrLegacy: async () => null,
     existsByUsername: async () => true,
+    existsByUsernameOrLegacy: async () => true,
     create: async (data) => data as any,
     save: async (user) => user,
     updateLocale: async () => null,
+    updateUsername: async () => null,
     ...overrides,
   }
 }
@@ -23,6 +26,7 @@ function makeBoardRepo(overrides: Partial<PublicBoardRepository> = {}): PublicBo
     create: async (data) => ({ _id: "b1", legacySlugs: [], ...data }) as any,
     save: async (board) => board,
     deleteById: async () => null,
+    updateOwnerUsername: async () => null,
     ...overrides,
   }
 }
@@ -195,5 +199,27 @@ describe("publicboard.service", () => {
     })
 
     expect(onBoardChange).not.toHaveBeenCalled()
+  })
+
+  it("updateBoard sincroniza draftItems con items cuando se guardan items sin enviar draftItems", async () => {
+    const board: any = {
+      _id: "b1",
+      slug: "emma",
+      title: "T",
+      isPublished: true,
+      items: [],
+      draftItems: [{ noteId: "old", content: "<svg/>", x: 0, y: 0, width: 50, height: 50, z: 0 }],
+    }
+    const svc = service({}, { findById: async () => board })
+
+    await svc.updateBoard("b1", {
+      items: [{ noteId: "new-1", content: "<svg/>", x: 10, y: 20, width: 400, height: 300, z: 5 }],
+    })
+
+    expect(board.items).toHaveLength(1)
+    expect(board.items[0].noteId).toBe("new-1")
+    expect(board.items[0].z).toBe(5)
+    expect(board.draftItems).toHaveLength(1)
+    expect(board.draftItems[0].noteId).toBe("new-1")
   })
 })

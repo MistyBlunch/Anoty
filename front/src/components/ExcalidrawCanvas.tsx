@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import '@excalidraw/excalidraw/index.css'
@@ -13,6 +13,10 @@ const ExcalidrawInner = dynamic(
     return function ExcalidrawCanvasInner({
       username,
       onSent,
+      onCanSendChange,
+      onIsSendingChange,
+      onRegisterSend,
+      hideFloatingButton,
       langCode,
       sendLabel,
       sendingLabel,
@@ -56,7 +60,7 @@ const ExcalidrawInner = dynamic(
         return () => document.removeEventListener('click', handleClick, true)
       }, [])
 
-      const handleSendDrawing = async () => {
+      const handleSendDrawing = useCallback(async () => {
         const apiInstance = excalidrawApiRef.current
         if (!apiInstance || !username) return
 
@@ -104,23 +108,38 @@ const ExcalidrawInner = dynamic(
         } finally {
           setIsSending(false)
         }
-      }
+      }, [username, anonymousAuthor, onSent, errorDefault, errorBackend])
 
       const canSend = Boolean(username && hasElements)
 
+      // Notificar al componente padre cuando cambien los estados de acción
+      useEffect(() => {
+        onCanSendChange?.(canSend)
+      }, [canSend, onCanSendChange])
+
+      useEffect(() => {
+        onIsSendingChange?.(isSending)
+      }, [isSending, onIsSendingChange])
+
+      useEffect(() => {
+        onRegisterSend?.(handleSendDrawing)
+      }, [onRegisterSend, handleSendDrawing])
+
       return (
         <div className="relative h-full">
-          <div className="absolute max-sm:w-11/12 max-sm:bottom-17 bottom-5 max-lg:left-1/2 max-lg:-translate-x-1/2 lg:top-3 lg:right-3 z-50">
-            <button
-              onClick={handleSendDrawing}
-              disabled={!canSend || isSending}
-              className="flex items-center justify-center gap-1.5 max-sm:w-full bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
-              title={sendTitle}
-            >
-              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span className='truncate'>{isSending ? sendingLabel : sendLabel}</span>
-            </button>
-          </div>
+          {!hideFloatingButton && (
+            <div className="absolute max-sm:w-11/12 max-sm:bottom-17 bottom-5 max-lg:left-1/2 max-lg:-translate-x-1/2 lg:top-3 lg:right-3 z-50">
+              <button
+                onClick={handleSendDrawing}
+                disabled={!canSend || isSending}
+                className="flex items-center justify-center gap-1.5 max-sm:w-full bg-teal-600 text-white border border-teal-600 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600"
+                title={sendTitle}
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <span className="truncate">{isSending ? sendingLabel : sendLabel}</span>
+              </button>
+            </div>
+          )}
 
           <Excalidraw
             langCode={langCode}
@@ -157,7 +176,14 @@ const ExcalidrawInner = dynamic(
   { ssr: false }
 )
 
-export default function ExcalidrawCanvas({ username, onSent }: ExcalidrawCanvasProps) {
+export default function ExcalidrawCanvas({
+  username,
+  onSent,
+  onCanSendChange,
+  onIsSendingChange,
+  onRegisterSend,
+  hideFloatingButton,
+}: ExcalidrawCanvasProps) {
   const { t, locale } = useLanguage()
   const langCode = locale === 'es' ? 'es-ES' : 'en'
 
@@ -165,6 +191,10 @@ export default function ExcalidrawCanvas({ username, onSent }: ExcalidrawCanvasP
     <ExcalidrawInner
       username={username}
       onSent={onSent}
+      onCanSendChange={onCanSendChange}
+      onIsSendingChange={onIsSendingChange}
+      onRegisterSend={onRegisterSend}
+      hideFloatingButton={hideFloatingButton}
       langCode={langCode}
       sendLabel={t('send_button', username || '...')}
       sendingLabel={t('send_sending')}

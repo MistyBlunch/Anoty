@@ -71,7 +71,7 @@ export default function NotesCanvas({
               <NoteCard
                 key={d._id}
                 drawing={d}
-                selected={selectedIds.includes(d._id)}
+                selected={Boolean(d._id && selectedIds.includes(d._id))}
                 pulsing={pulseId === d._id}
                 scale={scaleOf ? scaleOf(d) : 1}
                 handTool={handTool}
@@ -85,7 +85,7 @@ export default function NotesCanvas({
             <NoteCard
               key={d._id}
               drawing={d}
-              selected={selectedIds.includes(d._id)}
+              selected={Boolean(d._id && selectedIds.includes(d._id))}
               pulsing={pulseId === d._id}
               scale={scaleOf ? scaleOf(d) : 1}
               handTool={handTool}

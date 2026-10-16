@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type { GetServerSideProps } from "next"
 import { useRouter } from "next/router"
 import Head from "next/head"
 import Image from "next/image"
 import Script from "next/script"
-import { Send, CheckCircle2 } from "lucide-react"
+import { Send, CheckCircle2, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { api } from "@/lib/api"
 import { translations, type Locale } from "@/lib/i18n"
-import ExcalidrawCanvas from "@/components/ExcalidrawCanvas"
+import { ExcalidrawCanvas } from "@/features/board"
 import HeaderShell from "@/components/layout/HeaderShell"
 import { useLanguage } from "@/context/LanguageContext"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"
@@ -62,6 +62,13 @@ export default function SendNote({
 
   const [isSuccess, setIsSuccess] = useState(false)
   const [recipient, setRecipient] = useState<RecipientUser | null>(null)
+  const [canSend, setCanSend] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const sendDrawingRef = useRef<(() => Promise<void>) | null>(null)
+
+  const handleRegisterSend = useCallback((sendFn: () => Promise<void>) => {
+    sendDrawingRef.current = sendFn
+  }, [])
 
   useEffect(() => {
     if (!username) return
@@ -117,6 +124,8 @@ export default function SendNote({
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                     unoptimized
+                    loading="eager"
+                    priority
                   />
                 ) : (
                   <span className="text-lg sm:text-2xl font-extrabold text-white">
@@ -136,8 +145,37 @@ export default function SendNote({
             </div>
           }
           right={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
               <LanguageSwitcher />
+              {!isSuccess && (
+                <button
+                  id="send-drawing-btn"
+                  onClick={() => sendDrawingRef.current?.()}
+                  disabled={!canSend || isSending}
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 bg-teal-600 text-white border border-teal-600 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-md shadow-teal-500/25 hover:bg-teal-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-600 shrink-0"
+                  title={t("send_button_title", username || "...")}
+                >
+                  {isSending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isSending ? (
+                      t("send_sending")
+                    ) : (
+                      <>
+                        <span className="hidden md:inline">
+                          {t("send_button", username)}
+                        </span>
+                        <span className="md:hidden">
+                          {t("send_button_short")}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </button>
+              )}
             </div>
           }
         />
@@ -186,6 +224,10 @@ export default function SendNote({
               <ExcalidrawCanvas
                 username={username}
                 onSent={() => setIsSuccess(true)}
+                onCanSendChange={setCanSend}
+                onIsSendingChange={setIsSending}
+                onRegisterSend={handleRegisterSend}
+                hideFloatingButton
               />
             </div>
           )}

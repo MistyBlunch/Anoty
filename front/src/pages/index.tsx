@@ -20,7 +20,7 @@ import { useGoogleLogin } from "@react-oauth/google"
 import { api } from "@/lib/api"
 import type { AuthenticatedUser } from "@/types/auth"
 
-import { useAuth } from "@/hooks/useAuth"
+import { useAuth } from "@/features/auth"
 import { useLanguage } from "@/context/LanguageContext"
 import HeaderShell from "@/components/layout/HeaderShell"
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher"

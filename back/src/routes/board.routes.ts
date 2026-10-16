@@ -1,56 +1,11 @@
 import { Hono, type Context } from "hono"
 import { zValidator } from "@hono/zod-validator"
 import { createNoteSchema, updateNotePositionSchema } from "../schemas/board.schema.js"
-import { mongoUserRepository } from "../repositories/user.repository.js"
-import { mongoNoteRepository } from "../repositories/note.repository.js"
-import { createBoardService } from "../services/board.service.js"
 import { authMiddleware } from "../middleware/auth.middleware.js"
 import { AppError } from "../lib/error.js"
-import { wsHub, WS_USER_PREFIX } from "../lib/ws-hub.js"
-import { defaultEmailService } from "../services/email/index.js"
+import { boardService } from "../infrastructure/config/container.js"
 
 const board = new Hono()
-const boardService = createBoardService({
-  userRepo: mongoUserRepository,
-  noteRepo: mongoNoteRepository,
-  notifier: {
-    onNewDrawing: (username) =>
-      wsHub.broadcast(`${WS_USER_PREFIX}${username}`, { type: "new-drawing" }),
-    onDrawingCreated: async ({ recipient, note }) => {
-      if (!recipient.email) return
-
-      const appUrl = process.env.APP_URL || "https://anoty.app"
-      const resolvedLocale =
-        recipient.locale === "es" || recipient.locale === "en"
-          ? recipient.locale
-          : (process.env.EMAIL_LOCALE === "es" ? "es" : "en")
-
-      const isAnonymous =
-        !note.authorName ||
-        [
-          "amigo anónimo",
-          "amigo anonimo",
-          "un amigo anónimo",
-          "un amigo anonimo",
-          "anonymous friend",
-          "an anonymous friend",
-        ].includes(note.authorName.trim().toLowerCase())
-
-      const authorName = isAnonymous
-        ? (resolvedLocale === "es" ? "Un amigo anónimo" : "An anonymous friend")
-        : note.authorName
-
-      void defaultEmailService.sendNewDrawingNotification({
-        to: recipient.email,
-        recipientName: recipient.name || recipient.username,
-        recipientUsername: recipient.username,
-        authorName,
-        boardUrl: `${appUrl}/dashboard`,
-        locale: resolvedLocale,
-      })
-    },
-  },
-})
 
 const validationError = (result: { success: boolean; error?: any }, c: any) => {
   if (!result.success) {

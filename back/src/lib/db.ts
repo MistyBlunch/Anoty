@@ -7,7 +7,7 @@ export async function connectDB() {
 
   try {
     const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/noty_db"
-    await mongoose.connect(mongoUri)
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
     console.log("🍃 MongoDB conectada exitosamente")
   } catch (error) {
     console.error("❌ Error conectando a MongoDB:", error)

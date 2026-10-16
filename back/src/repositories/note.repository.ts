@@ -8,6 +8,7 @@ export interface NoteRepository {
   findById(id: string): Promise<INote | null>
   save(note: INote): Promise<INote>
   deleteById(id: string): Promise<INote | null>
+  updateBoardUsername(oldUsername: string, newUsername: string): Promise<number>
 }
 
 export const mongoNoteRepository: NoteRepository = {
@@ -39,5 +40,12 @@ export const mongoNoteRepository: NoteRepository = {
   },
   async deleteById(id) {
     return Note.findByIdAndDelete(id)
+  },
+  async updateBoardUsername(oldUsername, newUsername) {
+    const result = await Note.updateMany(
+      { boardUsername: oldUsername },
+      { $set: { boardUsername: newUsername } },
+    )
+    return result.modifiedCount || 0
   },
 }
