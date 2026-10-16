@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react"
 import { api } from "@/lib/api"
 import { normalizeBoardItems, serializeBoardItems, type Drawing } from "@/lib/board"
+import { useLanguage } from "@/context/LanguageContext"
 import type { AuthenticatedUser } from "@/types/auth"
 import type { PublicBoardDraft } from "@/types/publicboard"
 
@@ -20,10 +21,11 @@ interface UsePublicBoardOutput {
   setBoardTitle: Dispatch<SetStateAction<string>>
   savingBoard: boolean
   savedFeed: boolean
+  saveToast: string | null
   pubBoardRef: MutableRefObject<PublicBoardDraft | null>
   loadPublicBoard: (username: string) => Promise<void>
   saveDraftItems: (items: Drawing[]) => void
-  savePublicBoard: () => Promise<void>
+  savePublicBoard: () => void
   togglePublish: () => void
   copyPublicLink: () => Promise<void>
 }
@@ -42,6 +44,13 @@ const markDraftTouched = (boardId: string) => {
   }
 }
 
+const clearDraftTouched = (boardId: string) => {
+  try {
+    localStorage.removeItem(DRAFT_FLAG_PREFIX + boardId)
+  } catch {
+  }
+}
+
 export function usePublicBoard({
   user,
   mode,
@@ -49,19 +58,44 @@ export function usePublicBoard({
   copy,
   getDisplayItems,
 }: UsePublicBoardInput): UsePublicBoardOutput {
+  const { t } = useLanguage()
   const [board, setBoard] = useState<PublicBoardDraft | null>(null)
   const [boardLoading, setBoardLoading] = useState(false)
   const [boardTitle, setBoardTitle] = useState("")
   const [savingBoard, setSavingBoard] = useState(false)
   const [savedFeed, setSavedFeed] = useState(false)
+  const [saveToast, setSaveToast] = useState<string | null>(null)
   const pubBoardRef = useRef<PublicBoardDraft | null>(null)
   pubBoardRef.current = board
+
+  const draftTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const pendingDraftItemsRef = useRef<Drawing[] | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   const saveDraftItems = useCallback((items: Drawing[]) => {
     const b = pubBoardRef.current
     if (!b) return
     markDraftTouched(b._id)
-    api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardItems(items) }).catch(() => {})
+    pendingDraftItemsRef.current = items
+
+    if (draftTimerRef.current) {
+      clearTimeout(draftTimerRef.current)
+    }
+
+    draftTimerRef.current = setTimeout(() => {
+      draftTimerRef.current = null
+      const pending = pendingDraftItemsRef.current
+      if (!pending) return
+      pendingDraftItemsRef.current = null
+      api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardItems(pending) }).catch(() => {})
+    }, 300)
   }, [])
 
   const loadPublicBoard = useCallback(
@@ -79,10 +113,10 @@ export function usePublicBoard({
         }
         if (b) {
           const draftItems = b.draftItems as unknown[] | undefined
-          const hasDraft = Array.isArray(draftItems)
+          const hasDraft = Array.isArray(draftItems) && draftItems.length > 0
           const draftTouched = isDraftTouched(b._id as string)
           const draftSrc =
-            hasDraft && (draftTouched || (draftItems as unknown[]).length > 0) ? draftItems : (b.items as unknown[] | undefined)
+            draftTouched && hasDraft ? draftItems : (b.items as unknown[] | undefined) || draftItems
           setBoard({
             _id: b._id as string,
             slug: b.slug as string,
@@ -113,34 +147,68 @@ export function usePublicBoard({
     }
   }, [mode, board?._id, boardLoading, fitToContent])
 
-  const savePublicBoard = useCallback(async () => {
+  const savePublicBoard = useCallback(() => {
     const b = pubBoardRef.current
     if (!b) return
+
+    // Cancelar cualquier guardado en borrador pendiente para evitar condiciones de carrera
+    if (draftTimerRef.current) {
+      clearTimeout(draftTimerRef.current)
+      draftTimerRef.current = null
+    }
+    pendingDraftItemsRef.current = null
+
     const title = boardTitle.trim() || "Mi Tablero Público"
+    const currentItems = getDisplayItems()
+    const serialized = serializeBoardItems(currentItems)
+
+    // 1. Actualización inmediata y optimista en el tablero que estás editando
+    clearDraftTouched(b._id)
+    setBoard((prev) =>
+      prev
+        ? {
+            ...prev,
+            title,
+            items: currentItems,
+          }
+        : prev,
+    )
+
+    // 2. Guardado en segundo plano (sin bloquear la interacción del usuario)
     setSavingBoard(true)
-    try {
-      const data = await api.patch(`/public-boards/${b._id}`, {
+    api
+      .patch(`/public-boards/${b._id}`, {
         title,
         draftTitle: title,
-        items: serializeBoardItems(getDisplayItems()),
+        items: serialized,
+        draftItems: serialized,
       })
-      if (data.success) {
-        setBoard((prev) =>
-          prev
-            ? {
-                ...prev,
-                title,
-                updatedAt: ((data.board as Record<string, unknown> | undefined)?.updatedAt as string) || prev.updatedAt,
-              }
-            : prev,
-        )
-        setSavedFeed(true)
-        setTimeout(() => setSavedFeed(false), 1800)
-      }
-    } finally {
-      setSavingBoard(false)
-    }
-  }, [boardTitle, getDisplayItems])
+      .then((data) => {
+        if (data.success) {
+          setBoard((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  updatedAt: ((data.board as Record<string, unknown> | undefined)?.updatedAt as string) || prev.updatedAt,
+                }
+              : prev,
+          )
+          setSaveToast(t("sidebar_save_success_toast"))
+          setSavedFeed(true)
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+          toastTimerRef.current = setTimeout(() => {
+            setSavedFeed(false)
+            setSaveToast(null)
+          }, 3000)
+        }
+      })
+      .catch((err) => {
+        console.error("Error al guardar tablero en segundo plano:", err)
+      })
+      .finally(() => {
+        setSavingBoard(false)
+      })
+  }, [boardTitle, getDisplayItems, t])
 
   const togglePublish = useCallback(() => {
     const b = pubBoardRef.current
@@ -165,6 +233,7 @@ export function usePublicBoard({
     setBoardTitle,
     savingBoard,
     savedFeed,
+    saveToast,
     pubBoardRef,
     loadPublicBoard,
     saveDraftItems,

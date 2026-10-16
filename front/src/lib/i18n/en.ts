@@ -143,6 +143,7 @@ const en = {
   sidebar_saving: "Saving...",
   sidebar_saved: "Saved!",
   sidebar_save_wall: "Save board",
+  sidebar_save_success_toast: "Your board was updated successfully!",
 
   // ─── PublicBoardView ─────────────────────────────────────────────────────
   public_loading_text: "Loading public board...",

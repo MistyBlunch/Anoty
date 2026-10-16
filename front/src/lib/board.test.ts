@@ -289,10 +289,15 @@ describe("serializeBoardItems", () => {
 })
 
 describe("normalizeBoardItems", () => {
-  it("maps API board items to drawing shapes with fitted sizes", () => {
+  it("maps API board items to drawing shapes preserving custom dimensions", () => {
     const out = normalizeBoardItems([{ noteId: "n1", x: 5, y: 6, width: 900, height: 900 }])
-    expect(out[0]).toMatchObject({ _id: "n1", x: 5, y: 6, width: 420, height: 420, z: 0 })
+    expect(out[0]).toMatchObject({ _id: "n1", x: 5, y: 6, width: 900, height: 900, z: 0 })
     expect(out[0].transparent).toBeNull()
+  })
+
+  it("applies default note size when width and height are missing", () => {
+    const out = normalizeBoardItems([{ noteId: "n2", x: 0, y: 0 }])
+    expect(out[0]).toMatchObject({ _id: "n2", width: 320, height: 220 })
   })
 })
 

@@ -154,6 +154,7 @@ const es: Translations = {
   sidebar_saving: "Guardando...",
   sidebar_saved: "¡Guardado!",
   sidebar_save_wall: "Guardar tablero",
+  sidebar_save_success_toast: "¡Tu tablero se actualizó correctamente!",
 
   // ─── PublicBoardView ─────────────────────────────────────────────────────
   public_loading_text: "Cargando tablero público...",

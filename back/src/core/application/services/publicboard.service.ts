@@ -116,6 +116,9 @@ export function createPublicBoardService(deps: {
     if (typeof updates.isPublished === "boolean") board.isPublished = updates.isPublished
     if (Array.isArray(updates.items)) {
       board.items = mapItems(updates.items)
+      if (!Array.isArray(updates.draftItems)) {
+        board.draftItems = board.items
+      }
     }
     if (Array.isArray(updates.draftItems)) {
       board.draftItems = mapItems(updates.draftItems)

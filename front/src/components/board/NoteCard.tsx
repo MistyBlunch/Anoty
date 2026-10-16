@@ -25,7 +25,7 @@ function NoteCard({
         width: drawing.width,
         height: drawing.height,
         touchAction: "none",
-        zIndex: drawing.z || 0,
+        zIndex: selected ? 10000 + (drawing.z || 0) : (drawing.z || 0),
       }}
       onPointerDown={(e) => {
         if (handTool) return
@@ -35,8 +35,11 @@ function NoteCard({
       <BoardNote drawing={drawing} selected={selected} pulsing={pulsing} />
       {!handTool && selected && (
         <div
-          onPointerDown={(e) => onResizeStart(e, drawing)}
-          className="absolute -bottom-2 -right-2 z-10 w-5 h-5 bg-white border-2 border-teal-500 rounded-md shadow flex items-center justify-center cursor-nwse-resize"
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            onResizeStart(e, drawing)
+          }}
+          className="absolute -bottom-2 -right-2 z-20 w-5 h-5 bg-white border-2 border-teal-500 rounded-md shadow flex items-center justify-center cursor-nwse-resize"
           style={{ touchAction: "none" }}
           title="Redimensionar"
         >

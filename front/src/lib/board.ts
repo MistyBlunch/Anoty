@@ -302,15 +302,18 @@ export function serializeBoardItems(items: Drawing[]): PublicBoardItem[] {
 export function normalizeBoardItems(arr: unknown[]): Drawing[] {
   return arr.map((raw) => {
     const it = raw as Record<string, unknown>
-    const size = fitNoteSize(it.width as number | undefined, it.height as number | undefined)
+    const ww = Number(it.width)
+    const hh = Number(it.height)
+    const width = Number.isFinite(ww) && ww > 0 ? Math.max(40, Math.min(5000, Math.round(ww))) : DEFAULT_NOTE_W
+    const height = Number.isFinite(hh) && hh > 0 ? Math.max(40, Math.min(5000, Math.round(hh))) : DEFAULT_NOTE_H
     const itemId = (it.noteId || it._id || it.id || "") as string
     return {
       _id: itemId,
       content: (it.content as string) || "",
       x: Number(it.x) || 0,
       y: Number(it.y) || 0,
-      width: size.width,
-      height: size.height,
+      width,
+      height,
       rotation: Number(it.rotation) || 0,
       authorName: it.authorName as string | undefined,
       createdAt: (it.createdAt as string) || new Date().toISOString(),

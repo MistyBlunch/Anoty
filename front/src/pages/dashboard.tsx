@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import Head from "next/head"
 import dynamic from "next/dynamic"
-import { RefreshCw, Copy, Check } from "lucide-react"
+import { RefreshCw, Copy, Check, CheckCircle2 } from "lucide-react"
 import { useAuth } from "@/features/auth"
 import {
   NotesCanvas,
@@ -100,6 +100,7 @@ export default function Dashboard() {
     setBoardTitle,
     savingBoard,
     savedFeed,
+    saveToast,
     pubBoardRef,
     loadPublicBoard,
     saveDraftItems,
@@ -367,6 +368,16 @@ export default function Dashboard() {
 
         <main className="flex-1 relative overflow-hidden select-none">
           <HintBar text={hintText} />
+
+          {saveToast && (
+            <div
+              id="public-board-save-toast"
+              className="fixed top-16 sm:top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs sm:text-sm font-bold shadow-xl shadow-emerald-950/20 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none"
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
+              <span>{saveToast}</span>
+            </div>
+          )}
 
           {mode === "public" && (
             <PublicSidebar

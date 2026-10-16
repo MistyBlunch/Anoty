@@ -98,9 +98,8 @@ export default function PublicSidebar({
         <div className="hidden sm:block px-4 py-3 border-t border-slate-100">
           <button
             onClick={onSave}
-            disabled={saving}
-            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-              savedFeed ? "bg-emerald-500" : "bg-teal-600"
+            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold text-white cursor-pointer active:scale-98 transition-all ${
+              savedFeed ? "bg-emerald-500 hover:bg-emerald-600" : saving ? "bg-teal-700" : "bg-teal-600 hover:bg-teal-500"
             }`}
           >
             {saving ? (
@@ -126,9 +125,8 @@ export default function PublicSidebar({
           </button>
           <button
             onClick={onSave}
-            disabled={saving}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-xl shadow-teal-900/20 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed ${
-              savedFeed ? "bg-emerald-500" : "bg-teal-600"
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-xl shadow-teal-900/20 active:scale-95 transition-transform ${
+              savedFeed ? "bg-emerald-500" : saving ? "bg-teal-700" : "bg-teal-600"
             }`}
           >
             {saving ? (
