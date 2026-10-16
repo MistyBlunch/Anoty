@@ -46,7 +46,7 @@ export class MongoUserRepository implements UserRepositoryPort {
     const id = (user.id || user._id)?.toString()
     if (id) {
       const { _id, id: _tempId, ...updateFields } = persistenceData as any
-      const doc = await UserModel.findByIdAndUpdate(id, { $set: updateFields }, { new: true })
+      const doc = await UserModel.findByIdAndUpdate(id, { $set: updateFields }, { returnDocument: "after" })
       return doc ? userMapper.toDomain(doc) : user
     }
     const doc = await UserModel.create(persistenceData)
@@ -57,7 +57,7 @@ export class MongoUserRepository implements UserRepositoryPort {
     const doc = await UserModel.findOneAndUpdate(
       { username },
       { $set: { locale } },
-      { new: true },
+      { returnDocument: "after" },
     )
     return doc ? userMapper.toDomain(doc) : null
   }

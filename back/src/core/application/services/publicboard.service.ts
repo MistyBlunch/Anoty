@@ -101,35 +101,44 @@ export function createPublicBoardService(deps: {
   }
 
   const updateBoard = async (boardId: string, updates: UpdateBoardDTO) => {
-    const board = await boardRepo.findById(boardId)
-    if (!board) {
-      throw new AppError(404, "Tablero público no encontrado")
-    }
-
     const publishedFieldsChanged =
       typeof updates.title === "string" ||
       typeof updates.isPublished === "boolean" ||
       Array.isArray(updates.items)
 
-    if (typeof updates.title === "string") board.title = updates.title
-    if (typeof updates.draftTitle === "string") board.draftTitle = updates.draftTitle
-    if (typeof updates.isPublished === "boolean") board.isPublished = updates.isPublished
+    const updateData: Partial<PublicBoard> = {}
+    if (typeof updates.title === "string") updateData.title = updates.title
+    if (typeof updates.draftTitle === "string") updateData.draftTitle = updates.draftTitle
+    if (typeof updates.isPublished === "boolean") updateData.isPublished = updates.isPublished
     if (Array.isArray(updates.items)) {
-      board.items = mapItems(updates.items)
+      updateData.items = mapItems(updates.items)
       if (!Array.isArray(updates.draftItems)) {
-        board.draftItems = board.items
+        updateData.draftItems = updateData.items
       }
     }
     if (Array.isArray(updates.draftItems)) {
-      board.draftItems = mapItems(updates.draftItems)
+      updateData.draftItems = mapItems(updates.draftItems)
     }
-    await boardRepo.save(board)
+
+    let saved: PublicBoard | null = null
+    if (typeof boardRepo.update === "function") {
+      saved = await boardRepo.update(boardId, updateData)
+    } else {
+      const board = await boardRepo.findById(boardId)
+      if (!board) throw new AppError(404, "Tablero público no encontrado")
+      Object.assign(board, updateData)
+      saved = await boardRepo.save(board)
+    }
+
+    if (!saved) {
+      throw new AppError(404, "Tablero público no encontrado")
+    }
 
     if (publishedFieldsChanged) {
-      notifier?.onBoardChange?.(board)
+      notifier?.onBoardChange?.(saved)
     }
 
-    return { success: true, board }
+    return { success: true, board: saved }
   }
 
   const deleteBoard = async (boardId: string) => {

@@ -45,7 +45,7 @@ export const mongoUserRepository: UserRepository = {
     return (await User.findOneAndUpdate(
       { username },
       { $set: { locale } },
-      { new: true },
+      { returnDocument: "after" },
     )) as IUser | null
   },
   async updateUsername(userId, oldUsername, newUsername) {

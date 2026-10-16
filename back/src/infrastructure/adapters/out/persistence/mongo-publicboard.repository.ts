@@ -25,12 +25,27 @@ export class MongoPublicBoardRepository implements PublicBoardRepositoryPort {
     return publicBoardMapper.toDomain(doc)
   }
 
+  async update(id: string, data: Partial<PublicBoard>): Promise<PublicBoard | null> {
+    const persistenceData = publicBoardMapper.toPersistence(data)
+    const { _id, id: _tempId, createdAt, updatedAt, ...updateFields } = persistenceData as any
+    const doc = await PublicBoardModel.findByIdAndUpdate(
+      id,
+      { $set: { ...updateFields, updatedAt: new Date() } },
+      { returnDocument: "after" },
+    )
+    return doc ? publicBoardMapper.toDomain(doc) : null
+  }
+
   async save(board: PublicBoard): Promise<PublicBoard> {
     const persistenceData = publicBoardMapper.toPersistence(board)
     const id = (board.id || board._id)?.toString()
     if (id) {
-      const { _id, id: _tempId, ...updateFields } = persistenceData as any
-      const doc = await PublicBoardModel.findByIdAndUpdate(id, { $set: updateFields }, { new: true })
+      const { _id, id: _tempId, createdAt, updatedAt, ...updateFields } = persistenceData as any
+      const doc = await PublicBoardModel.findByIdAndUpdate(
+        id,
+        { $set: { ...updateFields, updatedAt: new Date() } },
+        { returnDocument: "after" },
+      )
       return doc ? publicBoardMapper.toDomain(doc) : board
     }
     const doc = await PublicBoardModel.create(persistenceData)
