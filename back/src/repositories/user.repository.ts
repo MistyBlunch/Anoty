@@ -1,11 +1,12 @@
+import mongoose from "mongoose"
 import { User, type IUser } from "../models/user.model.js"
 
 export interface UserRepository {
   findByGoogleIdOrEmail(googleId: string, email?: string): Promise<IUser | null>
   findByUsername(username: string): Promise<IUser | null>
   findByUsernameOrLegacy(username: string): Promise<IUser | null>
-  existsByUsername(username: string): Promise<boolean>
-  existsByUsernameOrLegacy(username: string): Promise<boolean>
+  existsByUsername(username: string, excludeUserId?: string): Promise<boolean>
+  existsByUsernameOrLegacy(username: string, excludeUserId?: string): Promise<boolean>
   create(data: Partial<IUser>): Promise<IUser>
   save(user: IUser): Promise<IUser>
   updateLocale(username: string, locale: "es" | "en"): Promise<IUser | null>
@@ -24,15 +25,31 @@ export const mongoUserRepository: UserRepository = {
       $or: [{ username }, { legacyUsernames: username }],
     }).select("username name avatar email locale legacyUsernames")) as IUser | null
   },
-  async existsByUsername(username) {
-    const found = await User.exists({ username })
-    return Boolean(found)
+  async existsByUsername(username, excludeUserId) {
+    const filter: any = { username }
+    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
+      filter._id = { $ne: excludeUserId }
+    }
+    const found = await User.exists(filter)
+    if (!found) return false
+    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
+      return false
+    }
+    return true
   },
-  async existsByUsernameOrLegacy(username) {
-    const found = await User.exists({
+  async existsByUsernameOrLegacy(username, excludeUserId) {
+    const filter: any = {
       $or: [{ username }, { legacyUsernames: username }],
-    })
-    return Boolean(found)
+    }
+    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
+      filter._id = { $ne: excludeUserId }
+    }
+    const found = await User.exists(filter)
+    if (!found) return false
+    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
+      return false
+    }
+    return true
   },
   async create(data) {
     return User.create(data) as Promise<IUser>
@@ -55,6 +72,7 @@ export const mongoUserRepository: UserRepository = {
     if (oldUsername && oldUsername !== newUsername) {
       legacy.add(oldUsername)
     }
+    legacy.delete(newUsername)
     doc.username = newUsername
     doc.legacyUsernames = Array.from(legacy)
     await doc.save()

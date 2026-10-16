@@ -73,17 +73,19 @@ auth.patch("/preferences", authMiddleware, async (c) => {
 auth.get("/check-username/:username", async (c) => {
   const username = c.req.param("username")
   let currentUsername: string | undefined
+  let currentUserId: string | undefined
   const header = c.req.header("Authorization")
   if (header?.startsWith("Bearer ")) {
     try {
       const token = header.slice("Bearer ".length).trim()
       const payload = await verifySessionToken(token)
       currentUsername = payload.username
+      currentUserId = payload.sub
     } catch {
       // Ignorar token inválido
     }
   }
-  const result = await authService.isUsernameAvailable(username, currentUsername)
+  const result = await authService.isUsernameAvailable(username, currentUsername, currentUserId)
   return c.json({ success: true, username, ...result })
 })
 
