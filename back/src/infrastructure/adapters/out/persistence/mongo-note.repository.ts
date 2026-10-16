@@ -20,7 +20,7 @@ export class MongoNoteRepository implements NoteRepositoryPort {
     const doc = await NoteModel.findOneAndUpdate(
       { _id: noteId, boardUsername },
       { $set: { isSeen: true } },
-      { new: true },
+      { returnDocument: "after" },
     )
     return doc ? noteMapper.toDomain(doc) : null
   }
@@ -41,7 +41,7 @@ export class MongoNoteRepository implements NoteRepositoryPort {
     const id = (note.id || note._id)?.toString()
     if (id) {
       const { _id, id: _tempId, ...updateFields } = persistenceData as any
-      const doc = await NoteModel.findByIdAndUpdate(id, { $set: updateFields }, { new: true })
+      const doc = await NoteModel.findByIdAndUpdate(id, { $set: updateFields }, { returnDocument: "after" })
       return doc ? noteMapper.toDomain(doc) : note
     }
     const doc = await NoteModel.create(persistenceData)

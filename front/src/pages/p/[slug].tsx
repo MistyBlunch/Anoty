@@ -4,9 +4,10 @@ import { useRouter } from "next/router"
 import Head from "next/head"
 import { MessageSquareHeart, Home, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
-import { isNewerUpdatedAt } from "@/lib/realtime"
+import { computeContentView } from "@/lib/board"
 import { translations, type Locale } from "@/lib/i18n"
 import type { Drawing } from "@/types/drawing"
+import clsx from "clsx"
 
 import {
   NotesCanvas,
@@ -15,7 +16,6 @@ import {
   EmptyBoard,
   useZoomPan,
   useFitToContent,
-  useRealtimeBoard,
 } from "@/features/board"
 import { useLanguage } from "@/context/LanguageContext"
 
@@ -125,7 +125,7 @@ export const getServerSideProps: GetServerSideProps<PublicBoardProps> = async (c
         ogImage,
       },
     }
-  } catch (error) {
+  } catch {
     // Si la llamada al backend falla en SSR, caemos de forma segura a carga en cliente
     return {
       props: {
@@ -162,6 +162,9 @@ export default function PublicBoardView({
   const [items, setItems] = useState<Drawing[]>(initialItems)
   const [status, setStatus] = useState<"loading" | "ready" | "notfound">(initialStatus)
 
+  const [isBoardCentered, setIsBoardCentered] = useState(initialItems.length === 0)
+  const initialFitDoneRef = useRef(false)
+
   const view = useZoomPan({ wheel: status === "ready", initialZoom: 0.8 })
   const { fitToContent } = useFitToContent(view)
 
@@ -171,7 +174,7 @@ export default function PublicBoardView({
   const loadBoard = useCallback((currentSlug: string) => {
     setStatus("loading")
     api
-      .get(`/public/${currentSlug.toLowerCase()}`)
+      .get(`/public/${currentSlug.toLowerCase()}?_t=${Date.now()}`)
       .then((data) => {
         if (!data.success) {
           setStatus("notfound")
@@ -213,21 +216,29 @@ export default function PublicBoardView({
     }
   }, [slug, initialSlug, status, loadBoard])
 
-  useRealtimeBoard({
-    slug: slug || null,
-    onBoardUpdated: (updatedAt) => {
-      if (isNewerUpdatedAt(updatedAtRef.current, updatedAt) && slug) {
-        loadBoard(slug)
-      }
-    },
-    onBoardHidden: () => setStatus("notfound"),
-  })
-
   useEffect(() => {
-    if (status !== "ready" || items.length === 0) return
-    fitToContent(items)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, items.length])
+    if (status !== "ready") return
+    if (items.length === 0) {
+      setIsBoardCentered(true)
+      return
+    }
+    if (initialFitDoneRef.current) return
+    initialFitDoneRef.current = true
+
+    const board = view.boardRef.current
+    if (board) {
+      const rect = board.getBoundingClientRect()
+      const next = computeContentView(rect.width, rect.height, items)
+      view.setZoom(next.zoom)
+      view.setPan(next.pan)
+    } else {
+      fitToContent(items)
+    }
+
+    requestAnimationFrame(() => {
+      setIsBoardCentered(true)
+    })
+  }, [status, items, fitToContent, view])
 
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
@@ -366,7 +377,34 @@ export default function PublicBoardView({
               backgroundSize: "24px 24px",
             }}
           >
-            <NotesCanvas items={items} pan={view.pan} zoom={view.zoom} />
+            <div
+              className={clsx(
+                "w-full h-full transition-opacity duration-300",
+                isBoardCentered ? "opacity-100" : "opacity-0",
+              )}
+            >
+              <NotesCanvas items={items} pan={view.pan} zoom={view.zoom} />
+            </div>
+          </div>
+
+          {/* Overlay elegante con blur hasta que el tablero esté perfectamente centrado */}
+          <div
+            className={clsx(
+              "absolute inset-0 z-30 flex flex-col items-center justify-center transition-all duration-500 ease-out",
+              isBoardCentered
+                ? "opacity-0 pointer-events-none backdrop-blur-none bg-slate-50/0"
+                : "opacity-100 backdrop-blur-md bg-slate-50/75",
+            )}
+            aria-hidden={isBoardCentered}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shadow-sm">
+                <RefreshCw className="w-5 h-5 text-teal-600 animate-spin" />
+              </div>
+              <p className="text-xs font-medium text-slate-500 tracking-wide">
+                {t("public_loading_text")}
+              </p>
+            </div>
           </div>
 
           {items.length === 0 && <EmptyBoard variant="viewer" />}

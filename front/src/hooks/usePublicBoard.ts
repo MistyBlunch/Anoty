@@ -98,7 +98,7 @@ export function usePublicBoard({
       if (!pending) return
       pendingDraftItemsRef.current = null
       api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardItems(pending) }).catch(() => {})
-    }, 300)
+    }, 600)
   }, [])
 
   const loadPublicBoard = useCallback(

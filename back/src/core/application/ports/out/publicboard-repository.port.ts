@@ -6,6 +6,7 @@ export interface PublicBoardRepositoryPort {
   findBySlugOrLegacy(slug: string): Promise<PublicBoard | null>
   create(data: Partial<PublicBoard>): Promise<PublicBoard>
   save(board: PublicBoard): Promise<PublicBoard>
+  update?(id: string, data: Partial<PublicBoard>): Promise<PublicBoard | null>
   deleteById(id: string): Promise<PublicBoard | null>
   updateOwnerUsername(oldUsername: string, newUsername: string): Promise<PublicBoard | null>
 }
