@@ -18,10 +18,7 @@ export class MongoUserRepository implements UserRepositoryPort {
   }
 
   async findByUsernameOrLegacy(username: string): Promise<User | null> {
-    const doc = await UserModel.findOne({
-      $or: [{ username }, { legacyUsernames: username }],
-    }).select("username name avatar email locale legacyUsernames")
-    return doc ? userMapper.toDomain(doc) : null
+    return this.findByUsername(username)
   }
 
   async existsByUsername(username: string, excludeUserId?: string): Promise<boolean> {
@@ -38,18 +35,7 @@ export class MongoUserRepository implements UserRepositoryPort {
   }
 
   async existsByUsernameOrLegacy(username: string, excludeUserId?: string): Promise<boolean> {
-    const filter: any = {
-      $or: [{ username }, { legacyUsernames: username }],
-    }
-    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
-      filter._id = { $ne: excludeUserId }
-    }
-    const found = await UserModel.exists(filter)
-    if (!found) return false
-    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
-      return false
-    }
-    return true
+    return this.existsByUsername(username, excludeUserId)
   }
 
   async create(data: Partial<User>): Promise<User> {
@@ -79,16 +65,11 @@ export class MongoUserRepository implements UserRepositoryPort {
     return doc ? userMapper.toDomain(doc) : null
   }
 
-  async updateUsername(userId: string, oldUsername: string, newUsername: string): Promise<User | null> {
+  async updateUsername(userId: string, _oldUsername: string, newUsername: string): Promise<User | null> {
     const doc = await UserModel.findById(userId)
     if (!doc) return null
-    const legacy = new Set(doc.legacyUsernames || [])
-    if (oldUsername && oldUsername !== newUsername) {
-      legacy.add(oldUsername)
-    }
-    legacy.delete(newUsername)
     doc.username = newUsername
-    doc.legacyUsernames = Array.from(legacy)
+    doc.legacyUsernames = []
     await doc.save()
     return userMapper.toDomain(doc)
   }

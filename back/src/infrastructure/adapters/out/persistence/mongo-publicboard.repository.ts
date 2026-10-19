@@ -4,8 +4,11 @@ import type { PublicBoard } from "../../../../core/domain/index.js"
 import { publicBoardMapper } from "./mappers/publicboard.mapper.js"
 
 export class MongoPublicBoardRepository implements PublicBoardRepositoryPort {
-  async findByOwner(username: string): Promise<PublicBoard | null> {
-    const doc = await PublicBoardModel.findOne({ ownerUsername: username })
+  async findByOwner(username: string, ownerId?: string): Promise<PublicBoard | null> {
+    const filter: any = ownerId
+      ? { $or: [{ ownerId }, { ownerUsername: username }] }
+      : { ownerUsername: username }
+    const doc = await PublicBoardModel.findOne(filter)
     return doc ? publicBoardMapper.toDomain(doc) : null
   }
 
@@ -15,7 +18,7 @@ export class MongoPublicBoardRepository implements PublicBoardRepositoryPort {
   }
 
   async findBySlugOrLegacy(slug: string): Promise<PublicBoard | null> {
-    const doc = await PublicBoardModel.findOne({ $or: [{ slug }, { legacySlugs: slug }] })
+    const doc = await PublicBoardModel.findOne({ slug })
     return doc ? publicBoardMapper.toDomain(doc) : null
   }
 
@@ -57,23 +60,19 @@ export class MongoPublicBoardRepository implements PublicBoardRepositoryPort {
     return doc ? publicBoardMapper.toDomain(doc) : null
   }
 
-  async updateOwnerUsername(oldUsername: string, newUsername: string): Promise<PublicBoard | null> {
-    const doc = await PublicBoardModel.findOne({
-      $or: [{ ownerUsername: oldUsername }, { slug: oldUsername }, { legacySlugs: oldUsername }],
-    })
+  async updateOwnerUsername(oldUsername: string, newUsername: string, ownerId?: string): Promise<PublicBoard | null> {
+    const filter: any = ownerId
+      ? { $or: [{ ownerId }, { ownerUsername: oldUsername }, { slug: oldUsername }] }
+      : { $or: [{ ownerUsername: oldUsername }, { slug: oldUsername }] }
+    const doc = await PublicBoardModel.findOne(filter)
     if (!doc) return null
-
-    const legacy = new Set(doc.legacySlugs || [])
-    if (doc.slug && doc.slug !== newUsername) {
-      legacy.add(doc.slug)
-    }
-    if (oldUsername && oldUsername !== newUsername) {
-      legacy.add(oldUsername)
-    }
 
     doc.ownerUsername = newUsername
     doc.slug = newUsername
-    doc.legacySlugs = Array.from(legacy)
+    if (ownerId) {
+      doc.ownerId = ownerId
+    }
+    doc.legacySlugs = []
     await doc.save()
     return publicBoardMapper.toDomain(doc)
   }

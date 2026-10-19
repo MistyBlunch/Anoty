@@ -23,20 +23,20 @@ board.get("/user/:username", async (c) => {
 board.get("/my-notes/:username", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
   assertOwnUsername(c, username)
-  return c.json(await boardService.getMyNotes(username))
+  return c.json(await boardService.getMyNotes(username, c.get("authUser").sub))
 })
 
 // POST /board/my-notes/:username/seen - Marcar todos los dibujos recibidos como vistos (Privado)
 board.post("/my-notes/:username/seen", authMiddleware, async (c) => {
   const username = c.req.param("username").toLowerCase()
   assertOwnUsername(c, username)
-  return c.json(await boardService.markAllSeen(username))
+  return c.json(await boardService.markAllSeen(username, c.get("authUser").sub))
 })
 
 // POST /board/notes/:noteId/seen - Marcar un dibujo recibido como visto (Privado)
 board.post("/notes/:noteId/seen", authMiddleware, async (c) => {
   const noteId = c.req.param("noteId")
-  return c.json(await boardService.markNoteSeen(noteId, c.get("authUser").username))
+  return c.json(await boardService.markNoteSeen(noteId, c.get("authUser").username, c.get("authUser").sub))
 })
 
 // POST /board/send/:username - Enviar una nota/dibujo anónimo a un amigo (Público)
@@ -58,14 +58,14 @@ board.patch(
   async (c) => {
     const noteId = c.req.param("noteId")
     const updates = c.req.valid("json")
-    return c.json(await boardService.updateNote(noteId, c.get("authUser").username, updates))
+    return c.json(await boardService.updateNote(noteId, c.get("authUser").username, updates, c.get("authUser").sub))
   },
 )
 
 // DELETE /board/notes/:noteId - Eliminar una nota recibida (Privado)
 board.delete("/notes/:noteId", authMiddleware, async (c) => {
   const noteId = c.req.param("noteId")
-  return c.json(await boardService.deleteNote(noteId, c.get("authUser").username))
+  return c.json(await boardService.deleteNote(noteId, c.get("authUser").username, c.get("authUser").sub))
 })
 
 function assertOwnUsername(c: Context, username: string) {

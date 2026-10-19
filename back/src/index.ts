@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes.js"
 import boardRoutes from "./routes/board.routes.js"
 import publicBoardRoutes from "./routes/publicboard.routes.js"
 import { wsRoutes } from "./routes/ws.routes.js"
+import mongoose from "mongoose"
 import { connectDB } from "./lib/db.js"
 import { AppError } from "./lib/error.js"
 import { defaultEmailService } from "./services/email/index.js"
@@ -27,6 +28,22 @@ app.use(
   }),
 )
 
+// Middleware para garantizar que la conexión a MongoDB esté lista antes de procesar peticiones
+app.use("*", async (c, next) => {
+  if (c.req.path === "/" || c.req.path === "/favicon.ico") {
+    return next()
+  }
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB()
+    } catch (err) {
+      console.error("❌ [DB Middleware] Base de datos no disponible para:", c.req.path, err)
+      return c.json({ success: false, message: "Base de datos temporalmente no disponible" }, 503)
+    }
+  }
+  return next()
+})
+
 // Manejo centralizado de errores (reemplaza los try/catch de cada handler)
 app.onError((error, c) => {
   if (error instanceof AppError) {
@@ -36,7 +53,7 @@ app.onError((error, c) => {
   return c.json({ success: false, message: "Error interno del servidor" }, 500)
 })
 
-// Inicializar conexión a la base de datos MongoDB
+// Inicializar conexión a la base de datos MongoDB al arrancar
 connectDB().catch((err) => {
   console.error("Error al inicializar la base de datos:", err)
 })

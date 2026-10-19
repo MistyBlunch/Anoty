@@ -42,9 +42,7 @@ export function createBoardService(deps: {
   const { userRepo, noteRepo, notifier } = deps
 
   const getRecipientInfo = async (username: string) => {
-    const user =
-      (await userRepo.findByUsernameOrLegacy?.(username)) ??
-      (await userRepo.findByUsername(username))
+    const user = await userRepo.findByUsername(username)
     if (!user) {
       throw new AppError(404, "Usuario no encontrado")
     }
@@ -58,33 +56,31 @@ export function createBoardService(deps: {
     }
   }
 
-  const getMyNotes = async (username: string) => {
-    const userExists =
-      (await userRepo.existsByUsernameOrLegacy?.(username)) ??
-      (await userRepo.existsByUsername(username))
-    if (!userExists) {
+  const getMyNotes = async (username: string, userId?: string) => {
+    const user = await userRepo.findByUsername(username)
+    if (!user) {
       throw new AppError(404, "Usuario no encontrado")
     }
 
-    const notes = await noteRepo.findByBoard(username)
+    const resolvedUserId = userId || (user.id || user._id)?.toString()
+    const notes = await noteRepo.findByBoard(user.username, resolvedUserId)
 
     return {
       success: true,
-      username,
+      username: user.username,
       totalNotes: notes.length,
       notes,
     }
   }
 
-  const markAllSeen = async (username: string) => {
-    const userExists =
-      (await userRepo.existsByUsernameOrLegacy?.(username)) ??
-      (await userRepo.existsByUsername(username))
-    if (!userExists) {
+  const markAllSeen = async (username: string, userId?: string) => {
+    const user = await userRepo.findByUsername(username)
+    if (!user) {
       throw new AppError(404, "Usuario no encontrado")
     }
 
-    await noteRepo.markAllSeen(username)
+    const resolvedUserId = userId || (user.id || user._id)?.toString()
+    await noteRepo.markAllSeen(user.username, resolvedUserId)
 
     return {
       success: true,
@@ -92,8 +88,8 @@ export function createBoardService(deps: {
     }
   }
 
-  const markNoteSeen = async (noteId: string, ownerUsername: string) => {
-    const note = await noteRepo.markOneSeen(noteId, ownerUsername)
+  const markNoteSeen = async (noteId: string, ownerUsername: string, userId?: string) => {
+    const note = await noteRepo.markOneSeen(noteId, ownerUsername, userId)
     if (!note) {
       throw new AppError(404, "Nota no encontrada")
     }
@@ -105,15 +101,15 @@ export function createBoardService(deps: {
   }
 
   const sendNote = async (username: string, data: CreateNoteDTO) => {
-    const user =
-      (await userRepo.findByUsernameOrLegacy?.(username)) ??
-      (await userRepo.findByUsername(username))
+    const user = await userRepo.findByUsername(username)
     if (!user) {
       throw new AppError(404, "El usuario receptor no existe")
     }
 
     const targetUsername = user.username || username
+    const recipientUserId = (user.id || user._id)?.toString()
     const newNote = await noteRepo.create({
+      userId: recipientUserId,
       boardUsername: targetUsername,
       ...data,
     })
@@ -147,13 +143,18 @@ export function createBoardService(deps: {
     noteId: string,
     ownerUsername: string,
     updates: UpdateNotePositionDTO,
+    userId?: string,
   ) => {
     const note = await noteRepo.findById(noteId)
     if (!note) {
       throw new AppError(404, "Nota no encontrada")
     }
-    if (note.boardUsername !== ownerUsername) {
+    const isOwner = (userId && note.userId === userId) || note.boardUsername === ownerUsername
+    if (!isOwner) {
       throw new AppError(403, "No tienes permiso para modificar esta nota")
+    }
+    if (userId && !note.userId) {
+      note.userId = userId
     }
 
     Object.assign(note, updates)
@@ -165,12 +166,13 @@ export function createBoardService(deps: {
     }
   }
 
-  const deleteNote = async (noteId: string, ownerUsername: string) => {
+  const deleteNote = async (noteId: string, ownerUsername: string, userId?: string) => {
     const note = await noteRepo.findById(noteId)
     if (!note) {
       throw new AppError(404, "Nota no encontrada")
     }
-    if (note.boardUsername !== ownerUsername) {
+    const isOwner = (userId && note.userId === userId) || note.boardUsername === ownerUsername
+    if (!isOwner) {
       throw new AppError(403, "No tienes permiso para eliminar esta nota")
     }
     await noteRepo.deleteById(noteId)

@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 
 export interface INote {
   _id?: string
+  userId?: string
   boardUsername: string
   type: "text" | "drawing" | "image" | "gif"
   content: string
@@ -23,6 +24,12 @@ export interface INote {
 
 const noteSchema = new mongoose.Schema<INote>(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+      sparse: true,
+    },
     boardUsername: {
       type: String,
       required: true,
