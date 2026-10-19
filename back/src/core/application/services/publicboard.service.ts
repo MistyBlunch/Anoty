@@ -1,11 +1,12 @@
 import type { PublicBoardRepositoryPort } from "../ports/out/publicboard-repository.port.js"
 import type { UserRepositoryPort } from "../ports/out/user-repository.port.js"
+import type { NoteRepositoryPort } from "../ports/out/note-repository.port.js"
 import type { PublicBoard, PublicBoardItem, User } from "../../domain/index.js"
 import { AppError } from "../../domain/index.js"
 
 export interface PublicBoardItemDTO {
   noteId: string
-  content: string
+  content?: string
   authorName?: string
   authorAvatar?: string
   createdAt?: string | Date
@@ -18,12 +19,25 @@ export interface PublicBoardItemDTO {
   transparent?: boolean
 }
 
+export interface PublicBoardItemDeltaDTO {
+  noteId: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  rotation?: number
+  z?: number
+  transparent?: boolean
+}
+
 export interface UpdateBoardDTO {
   title?: string
   draftTitle?: string
   isPublished?: boolean
   items?: PublicBoardItemDTO[]
   draftItems?: PublicBoardItemDTO[]
+  updatedItems?: PublicBoardItemDeltaDTO[]
+  updatedDraftItems?: PublicBoardItemDeltaDTO[]
 }
 
 export type PublicBoardNotifier = {
@@ -32,28 +46,13 @@ export type PublicBoardNotifier = {
 
 export type PublicBoardService = ReturnType<typeof createPublicBoardService>
 
-const mapItems = (items: PublicBoardItemDTO[]): PublicBoardItem[] =>
-  items.map((item) => ({
-    noteId: item.noteId,
-    content: item.content,
-    authorName: item.authorName || "Amigo Anónimo",
-    authorAvatar: item.authorAvatar,
-    createdAt: item.createdAt ? new Date(item.createdAt) : undefined,
-    x: item.x,
-    y: item.y,
-    width: item.width,
-    height: item.height,
-    rotation: item.rotation ?? 0,
-    z: item.z ?? 0,
-    transparent: item.transparent ?? false,
-  }))
-
 export function createPublicBoardService(deps: {
   boardRepo: PublicBoardRepositoryPort
   userRepo: UserRepositoryPort
+  noteRepo?: NoteRepositoryPort
   notifier?: PublicBoardNotifier
 }) {
-  const { boardRepo, userRepo, notifier } = deps
+  const { boardRepo, userRepo, noteRepo, notifier } = deps
 
   const ensureSlug = async (board: PublicBoard, username: string) => {
     if (board.slug !== username) {
@@ -134,28 +133,123 @@ export function createPublicBoardService(deps: {
     const publishedFieldsChanged =
       typeof updates.title === "string" ||
       typeof updates.isPublished === "boolean" ||
-      Array.isArray(updates.items)
+      Array.isArray(updates.items) ||
+      (Array.isArray(updates.updatedItems) && updates.updatedItems.length > 0)
+
+    const board = await boardRepo.findById(boardId)
+    if (!board) throw new AppError(404, "Tablero público no encontrado")
+
+    const existingItemMap = new Map<string, PublicBoardItem>()
+    for (const it of board.items || []) {
+      if (it.noteId) existingItemMap.set(it.noteId, it)
+    }
+    for (const it of board.draftItems || []) {
+      if (it.noteId && !existingItemMap.has(it.noteId)) existingItemMap.set(it.noteId, it)
+    }
+
+    const resolveItem = async (dto: PublicBoardItemDTO): Promise<PublicBoardItem> => {
+      const existing = existingItemMap.get(dto.noteId)
+      let content = dto.content || existing?.content || ""
+      let authorName = dto.authorName || existing?.authorName || "Amigo Anónimo"
+      let authorAvatar = dto.authorAvatar !== undefined ? dto.authorAvatar : existing?.authorAvatar
+      let createdAt = dto.createdAt ? new Date(dto.createdAt) : existing?.createdAt
+
+      if (!content && noteRepo) {
+        try {
+          const originalNote = await noteRepo.findById(dto.noteId)
+          if (originalNote) {
+            content = originalNote.content || ""
+            if (!dto.authorName && originalNote.authorName) authorName = originalNote.authorName
+            if (dto.authorAvatar === undefined && originalNote.authorAvatar) authorAvatar = originalNote.authorAvatar
+            if (!dto.createdAt && originalNote.createdAt) createdAt = originalNote.createdAt
+          }
+        } catch {}
+      }
+
+      return {
+        noteId: dto.noteId,
+        content,
+        authorName,
+        authorAvatar,
+        createdAt,
+        x: dto.x,
+        y: dto.y,
+        width: dto.width,
+        height: dto.height,
+        rotation: dto.rotation ?? 0,
+        z: dto.z ?? 0,
+        transparent: dto.transparent ?? false,
+      }
+    }
 
     const updateData: Partial<PublicBoard> = {}
     if (typeof updates.title === "string") updateData.title = updates.title
     if (typeof updates.draftTitle === "string") updateData.draftTitle = updates.draftTitle
     if (typeof updates.isPublished === "boolean") updateData.isPublished = updates.isPublished
+
+    // 1. Si se envían deltas de items específicos (updatedItems)
+    if (Array.isArray(updates.updatedItems) && updates.updatedItems.length > 0) {
+      const deltaMap = new Map(updates.updatedItems.map((u) => [u.noteId, u]))
+      const applyDelta = (list: PublicBoardItem[]) =>
+        list.map((it) => {
+          const delta = deltaMap.get(it.noteId)
+          if (!delta) return it
+          return {
+            ...it,
+            ...(delta.x !== undefined ? { x: delta.x } : {}),
+            ...(delta.y !== undefined ? { y: delta.y } : {}),
+            ...(delta.width !== undefined ? { width: delta.width } : {}),
+            ...(delta.height !== undefined ? { height: delta.height } : {}),
+            ...(delta.rotation !== undefined ? { rotation: delta.rotation } : {}),
+            ...(delta.z !== undefined ? { z: delta.z } : {}),
+            ...(delta.transparent !== undefined ? { transparent: delta.transparent } : {}),
+          }
+        })
+
+      updateData.draftItems = applyDelta(board.draftItems || board.items || [])
+      updateData.items = applyDelta(board.items || [])
+    }
+
+    // 1b. Si se envían deltas solo para borrador (updatedDraftItems)
+    if (Array.isArray(updates.updatedDraftItems) && updates.updatedDraftItems.length > 0) {
+      const deltaMap = new Map(updates.updatedDraftItems.map((u) => [u.noteId, u]))
+      const applyDelta = (list: PublicBoardItem[]) =>
+        list.map((it) => {
+          const delta = deltaMap.get(it.noteId)
+          if (!delta) return it
+          return {
+            ...it,
+            ...(delta.x !== undefined ? { x: delta.x } : {}),
+            ...(delta.y !== undefined ? { y: delta.y } : {}),
+            ...(delta.width !== undefined ? { width: delta.width } : {}),
+            ...(delta.height !== undefined ? { height: delta.height } : {}),
+            ...(delta.rotation !== undefined ? { rotation: delta.rotation } : {}),
+            ...(delta.z !== undefined ? { z: delta.z } : {}),
+            ...(delta.transparent !== undefined ? { transparent: delta.transparent } : {}),
+          }
+        })
+
+      const baseList = updateData.draftItems || board.draftItems || board.items || []
+      updateData.draftItems = applyDelta(baseList)
+    }
+
+    // 2. Si se envían items completos (con o sin content)
     if (Array.isArray(updates.items)) {
-      updateData.items = mapItems(updates.items)
+      updateData.items = await Promise.all(updates.items.map(resolveItem))
       if (!Array.isArray(updates.draftItems)) {
         updateData.draftItems = updateData.items
       }
     }
+
+    // 3. Si se envían draftItems completos (con o sin content)
     if (Array.isArray(updates.draftItems)) {
-      updateData.draftItems = mapItems(updates.draftItems)
+      updateData.draftItems = await Promise.all(updates.draftItems.map(resolveItem))
     }
 
     let saved: PublicBoard | null = null
     if (typeof boardRepo.update === "function") {
       saved = await boardRepo.update(boardId, updateData)
     } else {
-      const board = await boardRepo.findById(boardId)
-      if (!board) throw new AppError(404, "Tablero público no encontrado")
       Object.assign(board, updateData)
       saved = await boardRepo.save(board)
     }

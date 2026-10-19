@@ -254,4 +254,77 @@ describe("publicboard.service", () => {
     expect(res.success).toBe(true)
     expect(res.board._id).toBe("b_concurrent")
   })
+
+  it("updateBoard preserva el SVG existente cuando el cliente no envía content", async () => {
+    const board: any = {
+      _id: "b1",
+      slug: "emma",
+      items: [{ noteId: "n1", content: "<svg id='heavy-svg'/>", x: 10, y: 10, width: 100, height: 100 }],
+      draftItems: [{ noteId: "n1", content: "<svg id='heavy-svg'/>", x: 10, y: 10, width: 100, height: 100 }],
+    }
+    const svc = service({}, { findById: async () => board })
+
+    // El cliente solo envía las nuevas coordenadas, SIN el campo content
+    const res = await svc.updateBoard("b1", {
+      items: [{ noteId: "n1", x: 50, y: 80, width: 120, height: 120 } as any],
+    })
+
+    expect(res.board.items[0].x).toBe(50)
+    expect(res.board.items[0].y).toBe(80)
+    expect(res.board.items[0].content).toBe("<svg id='heavy-svg'/>")
+  })
+
+  it("updateBoard aplica deltas (updatedItems) solo a los elementos modificados", async () => {
+    const board: any = {
+      _id: "b1",
+      slug: "emma",
+      items: [
+        { noteId: "n1", content: "<svg 1/>", x: 10, y: 10, width: 100, height: 100, z: 0 },
+        { noteId: "n2", content: "<svg 2/>", x: 200, y: 200, width: 100, height: 100, z: 0 },
+      ],
+      draftItems: [
+        { noteId: "n1", content: "<svg 1/>", x: 10, y: 10, width: 100, height: 100, z: 0 },
+        { noteId: "n2", content: "<svg 2/>", x: 200, y: 200, width: 100, height: 100, z: 0 },
+      ],
+    }
+    const svc = service({}, { findById: async () => board })
+
+    // Se actualiza únicamente n1 a través de updatedItems
+    const res = await svc.updateBoard("b1", {
+      updatedItems: [{ noteId: "n1", x: 99, y: 88, z: 5 }],
+    })
+
+    expect(res.board.draftItems![0].x).toBe(99)
+    expect(res.board.draftItems![0].y).toBe(88)
+    expect(res.board.draftItems![0].z).toBe(5)
+    expect(res.board.draftItems![0].content).toBe("<svg 1/>")
+    // n2 no fue modificado
+    expect(res.board.draftItems![1].x).toBe(200)
+    expect(res.board.draftItems![1].y).toBe(200)
+  })
+
+  it("updateBoard aplica updatedDraftItems únicamente al borrador sin afectar la versión publicada", async () => {
+    const board: any = {
+      _id: "b1",
+      slug: "emma",
+      items: [
+        { noteId: "n1", content: "<svg 1/>", x: 10, y: 10, width: 100, height: 100, z: 0 },
+      ],
+      draftItems: [
+        { noteId: "n1", content: "<svg 1/>", x: 10, y: 10, width: 100, height: 100, z: 0 },
+      ],
+    }
+    const svc = service({}, { findById: async () => board })
+
+    const res = await svc.updateBoard("b1", {
+      updatedDraftItems: [{ noteId: "n1", x: 999, y: 888 }],
+    })
+
+    // El borrador fue modificado
+    expect(res.board.draftItems![0].x).toBe(999)
+    expect(res.board.draftItems![0].y).toBe(888)
+    // La versión pública publicada permanece intacta
+    expect(res.board.items[0].x).toBe(10)
+    expect(res.board.items[0].y).toBe(10)
+  })
 })

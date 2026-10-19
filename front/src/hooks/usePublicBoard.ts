@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react"
 import { api } from "@/lib/api"
-import { normalizeBoardItems, serializeBoardItems, type Drawing } from "@/lib/board"
+import { normalizeBoardItems, serializeBoardLayout, diffBoardItems, type Drawing } from "@/lib/board"
 import { useLanguage } from "@/context/LanguageContext"
 import type { AuthenticatedUser } from "@/types/auth"
 import type { PublicBoardDraft } from "@/types/publicboard"
@@ -74,6 +74,7 @@ export function usePublicBoard({
   const draftTimerRef = useRef<NodeJS.Timeout | null>(null)
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pendingDraftItemsRef = useRef<Drawing[] | null>(null)
+  const lastSyncedDraftRef = useRef<Drawing[] | null>(null)
 
   useEffect(() => {
     return () => {
@@ -97,7 +98,22 @@ export function usePublicBoard({
       const pending = pendingDraftItemsRef.current
       if (!pending) return
       pendingDraftItemsRef.current = null
-      api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardItems(pending) }).catch(() => {})
+
+      const prev = lastSyncedDraftRef.current
+      const idsChanged =
+        !prev ||
+        prev.length !== pending.length ||
+        prev.some((p, i) => p._id !== pending[i]._id)
+
+      if (idsChanged) {
+        lastSyncedDraftRef.current = pending
+        api.patch(`/public-boards/${b._id}`, { draftItems: serializeBoardLayout(pending) }).catch(() => {})
+      } else {
+        const deltas = diffBoardItems(prev, pending)
+        if (deltas.length === 0) return
+        lastSyncedDraftRef.current = pending
+        api.patch(`/public-boards/${b._id}`, { updatedDraftItems: deltas }).catch(() => {})
+      }
     }, 600)
   }, [])
 
@@ -122,12 +138,14 @@ export function usePublicBoard({
           const draftTouched = isDraftTouched(b._id as string)
           const draftSrc =
             draftTouched && hasDraft ? draftItems : (b.items as unknown[] | undefined) || draftItems
+          const normalized = normalizeBoardItems(draftSrc || [])
+          lastSyncedDraftRef.current = normalized
           setBoard({
             _id: b._id as string,
             slug: b.slug as string,
             title: (b.title as string) || "Mi Tablero Público",
             isPublished: (b.isPublished as boolean) ?? true,
-            items: normalizeBoardItems(draftSrc || []),
+            items: normalized,
             updatedAt: (b.updatedAt as string) || undefined,
           })
           setBoardTitle(titleFrom(b))
@@ -174,11 +192,12 @@ export function usePublicBoard({
 
     const title = boardTitle.trim() || "Mi Tablero Público"
     const currentItems = getDisplayItems()
-    const serialized = serializeBoardItems(currentItems)
+    const serialized = serializeBoardLayout(currentItems)
 
     // 1. Actualización inmediata y optimista en el tablero que estás editando
     clearDraftTouched(b._id)
     lastSavedAtRef.current = Date.now()
+    lastSyncedDraftRef.current = currentItems
     setBoard((prev) =>
       prev
         ? {

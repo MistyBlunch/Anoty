@@ -11,6 +11,8 @@ import {
   computeFocusView,
   zoomTowardPoint,
   serializeBoardItems,
+  serializeBoardLayout,
+  diffBoardItems,
   normalizeBoardItems,
   normalizeNotes,
   findVisibleFreeSlot,
@@ -285,6 +287,48 @@ describe("serializeBoardItems", () => {
       transparent: true,
       authorName: "Ana",
     })
+  })
+
+  it("omits content by default to reduce payload size drastically", () => {
+    const items = [draw({ content: "<svg huge payload/>" })]
+    const out = serializeBoardLayout(items)
+    expect(out[0].content).toBeUndefined()
+    expect(out[0].noteId).toBe("1")
+  })
+
+  it("includes content only when explicitly requested", () => {
+    const items = [draw({ content: "<svg huge payload/>" })]
+    const out = serializeBoardItems(items, { includeContent: true })
+    expect(out[0].content).toBe("<svg huge payload/>")
+  })
+})
+
+describe("diffBoardItems", () => {
+  it("returns only items whose coordinates, size, rotation or transparency changed", () => {
+    const item1 = draw({ _id: "1", x: 0, y: 0, width: 320, height: 220 })
+    const item2 = draw({ _id: "2", x: 100, y: 100, width: 320, height: 220 })
+
+    const modifiedItem1 = { ...item1, x: 50, y: 55 }
+    const unchangedItem2 = { ...item2 }
+
+    const deltas = diffBoardItems([item1, item2], [modifiedItem1, unchangedItem2])
+    expect(deltas).toHaveLength(1)
+    expect(deltas[0]).toEqual({
+      noteId: "1",
+      x: 50,
+      y: 55,
+      width: 320,
+      height: 220,
+      rotation: 0,
+      z: 0,
+      transparent: false,
+    })
+  })
+
+  it("returns an empty array when nothing changed", () => {
+    const item1 = draw({ _id: "1", x: 10, y: 20 })
+    const deltas = diffBoardItems([item1], [{ ...item1 }])
+    expect(deltas).toHaveLength(0)
   })
 })
 

@@ -1,8 +1,8 @@
 import type { Drawing } from "@/types/drawing"
-import type { PublicBoardItem } from "@/types/publicboard"
+import type { PublicBoardItem, PublicBoardItemDelta } from "@/types/publicboard"
 
 export type { Drawing } from "@/types/drawing"
-export type { PublicBoardItem } from "@/types/publicboard"
+export type { PublicBoardItem, PublicBoardItemDelta } from "@/types/publicboard"
 
 export const MIN_ZOOM = 0.1
 export const MAX_ZOOM = 3
@@ -283,20 +283,69 @@ export function zoomTowardPoint(
   }
 }
 
-export function serializeBoardItems(items: Drawing[]): PublicBoardItem[] {
-  return items.map((it) => ({
-    noteId: it._id,
-    content: it.content,
-    authorName: it.authorName,
-    createdAt: it.createdAt,
-    x: Math.round(it.x),
-    y: Math.round(it.y),
-    width: it.width,
-    height: it.height,
-    rotation: it.rotation || 0,
-    z: it.z || 0,
-    transparent: isTransparent(it),
-  }))
+export function serializeBoardItems(
+  items: Drawing[],
+  options: { includeContent?: boolean } = {},
+): PublicBoardItem[] {
+  return items.map((it) => {
+    const item: PublicBoardItem = {
+      noteId: it._id,
+      authorName: it.authorName,
+      createdAt: it.createdAt,
+      x: Math.round(it.x),
+      y: Math.round(it.y),
+      width: it.width,
+      height: it.height,
+      rotation: it.rotation || 0,
+      z: it.z || 0,
+      transparent: isTransparent(it),
+    }
+    if (options.includeContent) {
+      item.content = it.content
+    }
+    return item
+  })
+}
+
+export function serializeBoardLayout(items: Drawing[]): PublicBoardItem[] {
+  return serializeBoardItems(items, { includeContent: false })
+}
+
+export function diffBoardItems(prev: Drawing[], next: Drawing[]): PublicBoardItemDelta[] {
+  const prevMap = new Map(prev.map((d) => [d._id, d]))
+  const deltas: PublicBoardItemDelta[] = []
+
+  for (const n of next) {
+    const p = prevMap.get(n._id)
+    if (!p) continue
+    const roundX = Math.round(n.x)
+    const roundY = Math.round(n.y)
+    const prevX = Math.round(p.x)
+    const prevY = Math.round(p.y)
+    const hasChanged =
+      roundX !== prevX ||
+      roundY !== prevY ||
+      n.width !== p.width ||
+      n.height !== p.height ||
+      (n.rotation || 0) !== (p.rotation || 0) ||
+      (n.z || 0) !== (p.z || 0) ||
+      isTransparent(n) !== isTransparent(p)
+
+    if (hasChanged) {
+      deltas.push({
+        noteId: n._id,
+        x: roundX,
+        y: roundY,
+        width: n.width,
+        height: n.height,
+        rotation: n.rotation || 0,
+        z: n.z || 0,
+        transparent: isTransparent(n),
+      })
+    }
+  }
+
+  return deltas
 }
 
 export function normalizeBoardItems(arr: unknown[]): Drawing[] {
