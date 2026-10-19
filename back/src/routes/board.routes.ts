@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono"
 import { zValidator } from "@hono/zod-validator"
 import { createNoteSchema, updateNotePositionSchema } from "../schemas/board.schema.js"
 import { authMiddleware } from "../middleware/auth.middleware.js"
+import { createRateLimiter, getClientIp } from "../middleware/rate-limiter.middleware.js"
 import { AppError } from "../lib/error.js"
 import { boardService } from "../infrastructure/config/container.js"
 
@@ -12,6 +13,21 @@ const validationError = (result: { success: boolean; error?: any }, c: any) => {
     return c.json({ success: false, errors: result.error?.issues || [] }, 400)
   }
 }
+
+const sendNoteIpLimiter = createRateLimiter({
+  windowMs: 60_000,
+  max: 10,
+  cooldownMs: 1500,
+  keyGenerator: (c) => `send_ip:${getClientIp(c)}`,
+  message: "Has enviado notas demasiado rápido. Por favor, espera unos momentos antes de enviar otra.",
+})
+
+const sendNoteBoardLimiter = createRateLimiter({
+  windowMs: 60_000,
+  max: 30,
+  keyGenerator: (c) => `send_board:${(c.req.param("username") || "unknown").toLowerCase()}`,
+  message: "Este tablero ha recibido muchas notas en poco tiempo. Por favor, espera un momento e intenta nuevamente.",
+})
 
 // GET /board/user/:username - Obtener info pública del dueño del tablero (Público)
 board.get("/user/:username", async (c) => {
@@ -42,6 +58,8 @@ board.post("/notes/:noteId/seen", authMiddleware, async (c) => {
 // POST /board/send/:username - Enviar una nota/dibujo anónimo a un amigo (Público)
 board.post(
   "/send/:username",
+  sendNoteIpLimiter,
+  sendNoteBoardLimiter,
   zValidator("json", createNoteSchema, validationError),
   async (c) => {
     const username = c.req.param("username").toLowerCase()

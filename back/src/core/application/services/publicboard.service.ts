@@ -102,16 +102,32 @@ export function createPublicBoardService(deps: {
       return { success: true, board: existing }
     }
 
-    const board = await boardRepo.create({
-      ownerId: userId,
-      ownerUsername: username,
-      slug: username,
-      title: title || "Mi Tablero Público",
-      isPublished: true,
-      items: [],
-    })
+    try {
+      const board = await boardRepo.create({
+        ownerId: userId,
+        ownerUsername: username,
+        slug: username,
+        title: title || "Mi Tablero Público",
+        isPublished: true,
+        items: [],
+      })
 
-    return { success: true, board }
+      return { success: true, board }
+    } catch (err: any) {
+      // Manejo de condición de carrera: si otra petición concurrente creó el tablero en el mismo instante
+      const isDuplicateKey =
+        err?.code === 11000 ||
+        err?.name === "MongoServerError" ||
+        err?.message?.includes("E11000") ||
+        err?.message?.includes("duplicate key")
+      if (isDuplicateKey) {
+        const concurrentBoard = await boardRepo.findByOwner(username, userId)
+        if (concurrentBoard) {
+          return { success: true, board: concurrentBoard }
+        }
+      }
+      throw err
+    }
   }
 
   const updateBoard = async (boardId: string, updates: UpdateBoardDTO) => {

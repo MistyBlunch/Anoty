@@ -226,4 +226,32 @@ describe("publicboard.service", () => {
     expect(board.draftItems).toHaveLength(1)
     expect(board.draftItems[0].noteId).toBe("new-1")
   })
+
+  it("getOrCreate maneja condiciones de carrera retornando el tablero creado si ocurre error de clave duplicada", async () => {
+    let callCount = 0
+    const existingBoard: any = { _id: "b_concurrent", ownerUsername: "emma", slug: "emma" }
+
+    const findByOwner = vi.fn(async () => {
+      // Primera llamada: no existe; Segunda llamada tras la condición de carrera: ya fue creado por otra petición
+      callCount++
+      if (callCount === 1) return null
+      return existingBoard
+    })
+
+    const duplicateError: any = new Error("E11000 duplicate key error collection")
+    duplicateError.code = 11000
+
+    const create = vi.fn(async () => {
+      throw duplicateError
+    })
+
+    const svc = service(
+      { findByUsername: async () => ({ _id: "u1", username: "emma" }) as any },
+      { findByOwner, create },
+    )
+
+    const res = await svc.getOrCreate("emma")
+    expect(res.success).toBe(true)
+    expect(res.board._id).toBe("b_concurrent")
+  })
 })

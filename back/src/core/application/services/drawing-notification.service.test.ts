@@ -108,4 +108,35 @@ describe("DrawingNotificationService", () => {
       }),
     )
   })
+
+  it("evita inundación de correos aplicando cooldown cuando llegan múltiples dibujos consecutivos", async () => {
+    const sendFn = vi.fn().mockResolvedValue({ success: true })
+    const emailService: EmailServicePort = {
+      isConfigured: () => true,
+      sendNewDrawingNotification: sendFn,
+    }
+
+    const service = new DrawingNotificationService(emailService, {
+      emailCooldownMs: 60_000,
+    })
+
+    const event = {
+      recipient: { username: "emma", email: "emma@example.com" },
+      note: {
+        boardUsername: "emma",
+        type: "drawing" as const,
+        content: "data",
+        authorName: "Amigo 1",
+      },
+    }
+
+    // Primer dibujo -> Se envía el correo
+    await service.handle(event)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+
+    // Segundo y tercer dibujo inmediato -> Omitidos por cooldown activo
+    await service.handle(event)
+    await service.handle(event)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+  })
 })
