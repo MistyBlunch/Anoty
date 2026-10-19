@@ -1,6 +1,6 @@
 import type { PublicBoardRepositoryPort } from "../ports/out/publicboard-repository.port.js"
 import type { UserRepositoryPort } from "../ports/out/user-repository.port.js"
-import type { PublicBoard, PublicBoardItem } from "../../domain/index.js"
+import type { PublicBoard, PublicBoardItem, User } from "../../domain/index.js"
 import { AppError } from "../../domain/index.js"
 
 export interface PublicBoardItemDTO {
@@ -57,39 +57,53 @@ export function createPublicBoardService(deps: {
 
   const ensureSlug = async (board: PublicBoard, username: string) => {
     if (board.slug !== username) {
-      if (board.slug && !(board.legacySlugs || []).includes(board.slug)) {
-        board.legacySlugs = [...(board.legacySlugs || []), board.slug]
-      }
       board.slug = username
+      board.legacySlugs = []
       await boardRepo.save(board)
     }
   }
 
-  const assertUserExists = async (username: string) => {
-    const userExists = await userRepo.existsByUsername(username)
-    if (!userExists) {
-      throw new AppError(404, "Usuario no encontrado")
+  const getUserOrThrow = async (username: string): Promise<User> => {
+    let user = await userRepo.findByUsername(username)
+    if (!user) {
+      const exists = await userRepo.existsByUsername(username)
+      if (!exists) {
+        throw new AppError(404, "Usuario no encontrado")
+      }
+      user = { username } as User
     }
+    return user
   }
 
   const getOwnerBoard = async (username: string) => {
-    await assertUserExists(username)
-    const board = await boardRepo.findByOwner(username)
+    const user = await getUserOrThrow(username)
+    const userId = (user.id || user._id)?.toString()
+    const board = await boardRepo.findByOwner(username, userId)
     if (board) {
+      if (!board.ownerId && userId) {
+        board.ownerId = userId
+        await boardRepo.save(board)
+      }
       await ensureSlug(board, username)
     }
     return { success: true, board: board || null }
   }
 
   const getOrCreate = async (username: string, title?: string) => {
-    await assertUserExists(username)
-    const existing = await boardRepo.findByOwner(username)
+    const user = await getUserOrThrow(username)
+    const userId = (user.id || user._id)?.toString()
+    const existing = await boardRepo.findByOwner(username, userId)
     if (existing) {
+      if (!existing.ownerId && userId) {
+        existing.ownerId = userId
+        await boardRepo.save(existing)
+      }
       await ensureSlug(existing, username)
       return { success: true, board: existing }
     }
 
     const board = await boardRepo.create({
+      ownerId: userId,
       ownerUsername: username,
       slug: username,
       title: title || "Mi Tablero Público",

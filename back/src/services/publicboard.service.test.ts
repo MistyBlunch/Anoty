@@ -43,15 +43,19 @@ const service = (
   })
 
 describe("publicboard.service", () => {
-  it("getOrCreate devuelve el board existente y migra slug a username (legacy)", async () => {
+  it("getOrCreate devuelve el board existente, migra slug a username y libera slugs anteriores", async () => {
     const board: any = { _id: "b1", ownerUsername: "emma", slug: "viejo-slug", legacySlugs: [], title: "T", isPublished: true, items: [] }
     const save = vi.fn(async (b: any) => b)
-    const svc = service({}, { findByOwner: async () => board, save })
+    const svc = service(
+      { findByUsername: async () => ({ _id: "u1", username: "emma" }) as any },
+      { findByOwner: async () => board, save },
+    )
 
     const res = await svc.getOrCreate("emma")
 
     expect(res.board.slug).toBe("emma")
-    expect(board.legacySlugs).toContain("viejo-slug")
+    expect(board.legacySlugs).toEqual([])
+    expect(board.ownerId).toBe("u1")
     expect(save).toHaveBeenCalled()
   })
 

@@ -107,7 +107,7 @@ describe("auth.service", () => {
   })
 
   describe("changeUsername", () => {
-    it("cambia el username, migra notas y tablero público, y añade el anterior a legacyUsernames", async () => {
+    it("cambia el username, migra notas y tablero público con userId, y libera el anterior", async () => {
       const user = {
         _id: "u1",
         username: "emma",
@@ -115,8 +115,8 @@ describe("auth.service", () => {
         email: "emma@lap.com",
         legacyUsernames: [],
       }
-      const updateUsername = vi.fn(async (_id, oldU, newU) => {
-        return { ...user, username: newU, legacyUsernames: [oldU] }
+      const updateUsername = vi.fn(async (_id, _oldU, newU) => {
+        return { ...user, username: newU, legacyUsernames: [] }
       })
       const updateBoardUsername = vi.fn(async () => 5)
       const updateOwnerUsername = vi.fn(async () => ({} as any))
@@ -138,10 +138,10 @@ describe("auth.service", () => {
 
       expect(res.success).toBe(true)
       expect(res.user.username).toBe("emma_art")
-      expect(res.user.legacyUsernames).toEqual(["emma"])
+      expect(res.user.legacyUsernames).toEqual([])
       expect(updateUsername).toHaveBeenCalledWith("u1", "emma", "emma_art")
-      expect(updateBoardUsername).toHaveBeenCalledWith("emma", "emma_art")
-      expect(updateOwnerUsername).toHaveBeenCalledWith("emma", "emma_art")
+      expect(updateBoardUsername).toHaveBeenCalledWith("emma", "emma_art", "u1")
+      expect(updateOwnerUsername).toHaveBeenCalledWith("emma", "emma_art", "u1")
 
       const { payload } = decode(res.token)
       expect(payload.username).toBe("emma_art")
@@ -201,24 +201,21 @@ describe("auth.service", () => {
       })
     })
 
-    it("permite al usuario recuperar un nombre de usuario que está en sus propios legacyUsernames", async () => {
+    it("permite a un usuario volver a colocarse su nombre de usuario anterior una vez liberado", async () => {
       const user = {
         _id: "u1",
         username: "mistyblunchy",
-        legacyUsernames: ["mistyblunch"],
+        legacyUsernames: [],
       }
-      const updateUsername = vi.fn(async (_id, oldU, newU) => {
-        const legacy = new Set(user.legacyUsernames)
-        legacy.add(oldU)
-        legacy.delete(newU)
-        return { ...user, username: newU, legacyUsernames: Array.from(legacy) }
+      const updateUsername = vi.fn(async (_id, _oldU, newU) => {
+        return { ...user, username: newU, legacyUsernames: [] }
       })
 
       const service = createAuthService(
         makeUserRepo({
-          existsByUsernameOrLegacy: async (u, excludeId) => {
+          existsByUsername: async (u, excludeId) => {
             if (u === "mistyblunch" && excludeId === "u1") return false
-            return u === "mistyblunch"
+            return false
           },
           updateUsername: updateUsername as any,
         }),
@@ -228,7 +225,7 @@ describe("auth.service", () => {
       const res = await service.changeUsername("u1", "mistyblunchy", "mistyblunch")
       expect(res.success).toBe(true)
       expect(res.user.username).toBe("mistyblunch")
-      expect(res.user.legacyUsernames).toEqual(["mistyblunchy"])
+      expect(res.user.legacyUsernames).toEqual([])
     })
 
     it("no realiza cambios si el nombre es el mismo y retorna el usuario", async () => {
@@ -250,10 +247,9 @@ describe("auth.service", () => {
     it("valida disponibilidad correctamente", async () => {
       const service = createAuthService(
         makeUserRepo({
-          existsByUsername: async (u) => u === "existing",
-          existsByUsernameOrLegacy: async (u, excludeId) => {
-            if (u === "mistyblunch" && excludeId === "u1") return false
-            return u === "existing" || u === "mistyblunch"
+          existsByUsername: async (u, excludeId) => {
+            if (u === "existing" && excludeId !== "u_existing") return true
+            return false
           },
         }),
         verifier,
@@ -268,10 +264,9 @@ describe("auth.service", () => {
       expect((await service.isUsernameAvailable("a".repeat(21))).available).toBe(false)
       expect((await service.isUsernameAvailable("")).available).toBe(false)
       expect((await service.isUsernameAvailable("free_user_123")).available).toBe(true)
-      // El usuario u1 puede recuperar su propio username legacy
+      // Un username liberado queda disponible para cualquier usuario
       expect((await service.isUsernameAvailable("mistyblunch", "mistyblunchy", "u1")).available).toBe(true)
-      // Otro usuario no puede tomar el username legacy de u1
-      expect((await service.isUsernameAvailable("mistyblunch", "other_user", "u2")).available).toBe(false)
+      expect((await service.isUsernameAvailable("mistyblunch", "other_user", "u2")).available).toBe(true)
     })
   })
 })

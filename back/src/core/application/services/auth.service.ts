@@ -85,9 +85,7 @@ export function createAuthService(
     if (reserved.includes(normalized)) {
       return { available: false, reason: "Este nombre de usuario está reservado" }
     }
-    const exists = userRepo.existsByUsernameOrLegacy
-      ? await userRepo.existsByUsernameOrLegacy(normalized, currentUserId)
-      : await userRepo.existsByUsername(normalized, currentUserId)
+    const exists = await userRepo.existsByUsername(normalized, currentUserId)
     if (exists) {
       return { available: false, reason: "Este nombre de usuario ya está en uso" }
     }
@@ -150,28 +148,21 @@ export function createAuthService(
       throw new AppError(400, "Este nombre de usuario está reservado")
     }
 
-    const isTaken = userRepo.existsByUsernameOrLegacy
-      ? await userRepo.existsByUsernameOrLegacy(newUsername, userId)
-      : await userRepo.existsByUsername(newUsername, userId)
+    const isTaken = await userRepo.existsByUsername(newUsername, userId)
 
     if (isTaken) {
       throw new AppError(409, "El nombre de usuario ya está en uso")
     }
 
-    // 1. Actualizar usuario en repositorio y agregar el anterior a sus legacyUsernames
+    // 1. Actualizar usuario en repositorio y liberar el anterior
     let updatedUser: User | null = null
     if (userRepo.updateUsername) {
       updatedUser = await userRepo.updateUsername(userId, oldUsername, newUsername)
     } else {
       const user = await userRepo.findByUsername(oldUsername)
       if (user) {
-        const legacy = new Set(user.legacyUsernames || [])
-        if (oldUsername && oldUsername !== newUsername) {
-          legacy.add(oldUsername)
-        }
-        legacy.delete(newUsername)
-        user.legacyUsernames = Array.from(legacy)
         user.username = newUsername
+        user.legacyUsernames = []
         updatedUser = await userRepo.save(user)
       }
     }
@@ -180,14 +171,14 @@ export function createAuthService(
       throw new AppError(404, "No se encontró el usuario para actualizar")
     }
 
-    // 2. Migrar notas/dibujos existentes para conservar todo su historial sin perder nada
+    // 2. Migrar notas/dibujos existentes para conservar todo su historial vinculado al userId
     if (noteRepo?.updateBoardUsername) {
-      await noteRepo.updateBoardUsername(oldUsername, newUsername)
+      await noteRepo.updateBoardUsername(oldUsername, newUsername, userId)
     }
 
-    // 3. Migrar tablero público existente para conservar sus enlaces previos
+    // 3. Migrar tablero público existente vinculándolo al ownerId
     if (publicBoardRepo?.updateOwnerUsername) {
-      await publicBoardRepo.updateOwnerUsername(oldUsername, newUsername)
+      await publicBoardRepo.updateOwnerUsername(oldUsername, newUsername, userId)
     }
 
     // 4. Firmar nuevo token de sesión con el nuevo username

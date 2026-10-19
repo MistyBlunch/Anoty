@@ -21,9 +21,7 @@ export const mongoUserRepository: UserRepository = {
     return (await User.findOne({ username }).select("username name avatar email locale legacyUsernames")) as IUser | null
   },
   async findByUsernameOrLegacy(username) {
-    return (await User.findOne({
-      $or: [{ username }, { legacyUsernames: username }],
-    }).select("username name avatar email locale legacyUsernames")) as IUser | null
+    return this.findByUsername(username)
   },
   async existsByUsername(username, excludeUserId) {
     const filter: any = { username }
@@ -38,18 +36,7 @@ export const mongoUserRepository: UserRepository = {
     return true
   },
   async existsByUsernameOrLegacy(username, excludeUserId) {
-    const filter: any = {
-      $or: [{ username }, { legacyUsernames: username }],
-    }
-    if (excludeUserId && mongoose.isValidObjectId(excludeUserId)) {
-      filter._id = { $ne: excludeUserId }
-    }
-    const found = await User.exists(filter)
-    if (!found) return false
-    if (excludeUserId && (found as any)._id?.toString() === excludeUserId.toString()) {
-      return false
-    }
-    return true
+    return this.existsByUsername(username, excludeUserId)
   },
   async create(data) {
     return User.create(data) as Promise<IUser>
@@ -65,16 +52,11 @@ export const mongoUserRepository: UserRepository = {
       { returnDocument: "after" },
     )) as IUser | null
   },
-  async updateUsername(userId, oldUsername, newUsername) {
+  async updateUsername(userId, _oldUsername, newUsername) {
     const doc = await User.findById(userId)
     if (!doc) return null
-    const legacy = new Set(doc.legacyUsernames || [])
-    if (oldUsername && oldUsername !== newUsername) {
-      legacy.add(oldUsername)
-    }
-    legacy.delete(newUsername)
     doc.username = newUsername
-    doc.legacyUsernames = Array.from(legacy)
+    doc.legacyUsernames = []
     await doc.save()
     return doc
   },

@@ -4,21 +4,30 @@ import type { Note } from "../../../../core/domain/index.js"
 import { noteMapper } from "./mappers/note.mapper.js"
 
 export class MongoNoteRepository implements NoteRepositoryPort {
-  async findByBoard(boardUsername: string): Promise<Note[]> {
-    const docs = await NoteModel.find({ boardUsername }).sort({ createdAt: -1 })
+  async findByBoard(boardUsername: string, userId?: string): Promise<Note[]> {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername }] }
+      : { boardUsername }
+    const docs = await NoteModel.find(filter).sort({ createdAt: -1 })
     return docs.map((d: any) => noteMapper.toDomain(d))
   }
 
-  async markAllSeen(boardUsername: string): Promise<void> {
-    await NoteModel.updateMany(
-      { boardUsername, type: "drawing", isSeen: false },
-      { $set: { isSeen: true } },
-    )
+  async markAllSeen(boardUsername: string, userId?: string): Promise<void> {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername }], type: "drawing", isSeen: false }
+      : { boardUsername, type: "drawing", isSeen: false }
+    await NoteModel.updateMany(filter, { $set: { isSeen: true } })
   }
 
-  async markOneSeen(noteId: string, boardUsername: string): Promise<Note | null> {
+  async markOneSeen(noteId: string, boardUsername: string, userId?: string): Promise<Note | null> {
+    const filter: any = { _id: noteId }
+    if (userId) {
+      filter.$or = [{ userId }, { boardUsername }]
+    } else {
+      filter.boardUsername = boardUsername
+    }
     const doc = await NoteModel.findOneAndUpdate(
-      { _id: noteId, boardUsername },
+      filter,
       { $set: { isSeen: true } },
       { returnDocument: "after" },
     )
@@ -53,11 +62,15 @@ export class MongoNoteRepository implements NoteRepositoryPort {
     return doc ? noteMapper.toDomain(doc) : null
   }
 
-  async updateBoardUsername(oldUsername: string, newUsername: string): Promise<number> {
-    const result = await NoteModel.updateMany(
-      { boardUsername: oldUsername },
-      { $set: { boardUsername: newUsername } },
-    )
+  async updateBoardUsername(oldUsername: string, newUsername: string, userId?: string): Promise<number> {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername: oldUsername }] }
+      : { boardUsername: oldUsername }
+    const update: any = { $set: { boardUsername: newUsername } }
+    if (userId) {
+      update.$set.userId = userId
+    }
+    const result = await NoteModel.updateMany(filter, update)
     return result.modifiedCount || 0
   }
 }

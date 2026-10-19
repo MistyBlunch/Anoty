@@ -1,28 +1,37 @@
 import { Note, type INote } from "../models/note.model.js"
 
 export interface NoteRepository {
-  findByBoard(boardUsername: string): Promise<INote[]>
-  markAllSeen(boardUsername: string): Promise<void>
-  markOneSeen(noteId: string, boardUsername: string): Promise<INote | null>
+  findByBoard(boardUsername: string, userId?: string): Promise<INote[]>
+  markAllSeen(boardUsername: string, userId?: string): Promise<void>
+  markOneSeen(noteId: string, boardUsername: string, userId?: string): Promise<INote | null>
   create(data: Partial<INote>): Promise<INote>
   findById(id: string): Promise<INote | null>
   save(note: INote): Promise<INote>
   deleteById(id: string): Promise<INote | null>
-  updateBoardUsername(oldUsername: string, newUsername: string): Promise<number>
+  updateBoardUsername(oldUsername: string, newUsername: string, userId?: string): Promise<number>
 }
 
 export const mongoNoteRepository: NoteRepository = {
-  async findByBoard(boardUsername) {
-    return Note.find({ boardUsername }).sort({ createdAt: -1 })
+  async findByBoard(boardUsername, userId) {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername }] }
+      : { boardUsername }
+    return Note.find(filter).sort({ createdAt: -1 })
   },
-  async markAllSeen(boardUsername) {
-    await Note.updateMany(
-      { boardUsername, type: "drawing", isSeen: false },
-      { $set: { isSeen: true } },
-    )
+  async markAllSeen(boardUsername, userId) {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername }], type: "drawing", isSeen: false }
+      : { boardUsername, type: "drawing", isSeen: false }
+    await Note.updateMany(filter, { $set: { isSeen: true } })
   },
-  async markOneSeen(noteId, boardUsername) {
-    const note = await Note.findOne({ _id: noteId, boardUsername })
+  async markOneSeen(noteId: string, boardUsername: string, userId?: string) {
+    const filter: any = { _id: noteId }
+    if (userId) {
+      filter.$or = [{ userId }, { boardUsername }]
+    } else {
+      filter.boardUsername = boardUsername
+    }
+    const note = await Note.findOne(filter)
     if (!note) return null
     note.isSeen = true
     await (note as any).save()
@@ -41,11 +50,15 @@ export const mongoNoteRepository: NoteRepository = {
   async deleteById(id) {
     return Note.findByIdAndDelete(id)
   },
-  async updateBoardUsername(oldUsername, newUsername) {
-    const result = await Note.updateMany(
-      { boardUsername: oldUsername },
-      { $set: { boardUsername: newUsername } },
-    )
+  async updateBoardUsername(oldUsername, newUsername, userId) {
+    const filter: any = userId
+      ? { $or: [{ userId }, { boardUsername: oldUsername }] }
+      : { boardUsername: oldUsername }
+    const update: any = { $set: { boardUsername: newUsername } }
+    if (userId) {
+      update.$set.userId = userId
+    }
+    const result = await Note.updateMany(filter, update)
     return result.modifiedCount || 0
   },
 }

@@ -16,6 +16,7 @@ export interface PublicBoardItem {
 export interface PublicBoard {
   id?: string
   _id?: string
+  ownerId?: string
   ownerUsername: string
   slug: string
   legacySlugs?: string[]

@@ -17,6 +17,7 @@ export interface IPublicBoardItem {
 
 export interface IPublicBoard {
   _id?: string
+  ownerId?: string
   ownerUsername: string
   slug: string
   legacySlugs?: string[]
@@ -49,6 +50,12 @@ const publicBoardItemSchema = new mongoose.Schema<IPublicBoardItem>(
 
 const publicBoardSchema = new mongoose.Schema<IPublicBoard>(
   {
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+      sparse: true,
+    },
     ownerUsername: {
       type: String,
       required: true,

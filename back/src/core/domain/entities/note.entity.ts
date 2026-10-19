@@ -3,6 +3,7 @@ export type NoteType = "text" | "drawing" | "image" | "gif"
 export interface Note {
   id?: string
   _id?: string
+  userId?: string
   boardUsername: string
   type: NoteType
   content: string

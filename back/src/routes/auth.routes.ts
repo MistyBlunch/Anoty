@@ -33,6 +33,18 @@ auth.post(
         return c.json({ success: false, message: error.message }, error.status as any)
       }
       console.error("❌ [Backend /auth/google] Error en la autenticación de Google:", error)
+      const isDbError =
+        error instanceof Error &&
+        (error.name === "MongooseError" ||
+          error.name === "MongoServerError" ||
+          error.name === "MongoNetworkError" ||
+          error.message.includes("buffering timed out"))
+      if (isDbError) {
+        return c.json(
+          { success: false, message: "Error de conexión con la base de datos. Intenta nuevamente." },
+          503,
+        )
+      }
       return c.json({ success: false, message: "Error al verificar la cuenta de Google" }, 401)
     }
   },

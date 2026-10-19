@@ -8,6 +8,7 @@ export const noteMapper = {
     return {
       id,
       _id: id,
+      userId: doc.userId?.toString(),
       boardUsername: doc.boardUsername,
       type: doc.type,
       content: doc.content,

@@ -8,6 +8,7 @@ export const publicBoardMapper = {
     return {
       id,
       _id: id,
+      ownerId: doc.ownerId?.toString(),
       ownerUsername: doc.ownerUsername,
       slug: doc.slug,
       legacySlugs: doc.legacySlugs,

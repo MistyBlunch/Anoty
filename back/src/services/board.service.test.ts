@@ -7,8 +7,9 @@ import { AppError } from "../lib/error.js"
 function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   const findByUsername =
     overrides.findByUsername ||
-    (async () => ({ _id: "u1", username: "emma", name: "Emma", avatar: "" }) as any)
-  const existsByUsername = overrides.existsByUsername || (async () => true)
+    (async (u: string) => (u === "emma" ? { _id: "u1", username: "emma", name: "Emma", avatar: "" } : null) as any)
+  const existsByUsername =
+    overrides.existsByUsername || (async (u: string) => u === "emma")
   return {
     findByGoogleIdOrEmail: async () => null,
     findByUsername,
@@ -78,6 +79,7 @@ describe("board.service", () => {
     const res = await svc.sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
 
     expect(create.mock.calls[0][0].boardUsername).toBe("emma")
+    expect(create.mock.calls[0][0].userId).toBe("u1")
     expect(res.note._id).toBe("n1")
     expect(res.recipient.username).toBe("emma")
     expect(res.message).toContain("@emma")
@@ -135,19 +137,19 @@ describe("board.service", () => {
     const markAllSeen = vi.fn(async () => {})
     const svc = service({}, { markAllSeen })
     const res = await svc.markAllSeen("emma")
-    expect(markAllSeen).toHaveBeenCalledWith("emma")
+    expect(markAllSeen).toHaveBeenCalledWith("emma", "u1")
     expect(res.success).toBe(true)
   })
 
   it("markNoteSeen marca el dibujo y verifica el dueño", async () => {
-    const markOneSeen = vi.fn(async (noteId: string, owner: string) => ({
+    const markOneSeen = vi.fn(async (noteId: string, owner: string, userId?: string) => ({
       _id: noteId,
       boardUsername: owner,
       isSeen: true,
     }) as any)
     const svc = service({}, { markOneSeen })
-    const res = await svc.markNoteSeen("n1", "emma")
-    expect(markOneSeen).toHaveBeenCalledWith("n1", "emma")
+    const res = await svc.markNoteSeen("n1", "emma", "u1")
+    expect(markOneSeen).toHaveBeenCalledWith("n1", "emma", "u1")
     expect(res.success).toBe(true)
   })
 
@@ -208,34 +210,20 @@ describe("board.service", () => {
     expect(onDrawingCreated).not.toHaveBeenCalled()
   })
 
-  it("getRecipientInfo resuelve al usuario mediante legacy username", async () => {
-    const user = { _id: "u1", username: "emma_new", name: "Emma", legacyUsernames: ["emma_old"] }
-    const svc = service({
-      findByUsername: async () => null,
-      findByUsernameOrLegacy: async (u: string) => (u === "emma_old" ? (user as any) : null),
-    })
+  it("sendNote vincula automáticamente el userId del receptor a la nueva nota", async () => {
+    const create = vi.fn(async (data: any) => ({ _id: "n1", ...data }) as any)
+    const svc = service({}, { create })
 
-    const res = await svc.getRecipientInfo("emma_old")
-    expect(res.success).toBe(true)
-    expect(res.user.username).toBe("emma_new")
+    await svc.sendNote("emma", { type: "drawing", content: "<svg/>" } as any)
+    expect(create.mock.calls[0][0].userId).toBe("u1")
+    expect(create.mock.calls[0][0].boardUsername).toBe("emma")
   })
 
-  it("sendNote asigna el dibujo al active username cuando se envía usando un legacy username", async () => {
-    const user = { _id: "u1", username: "emma_new", legacyUsernames: ["emma_old"] }
-    const create = vi.fn(async (data: any) => ({ _id: "n1", ...data }) as any)
-    const onNewDrawing = vi.fn()
-    const svc = service(
-      {
-        findByUsername: async () => null,
-        findByUsernameOrLegacy: async (u: string) => (u === "emma_old" ? (user as any) : null),
-      },
-      { create },
-      { onNewDrawing },
-    )
+  it("getMyNotes pasa el userId resuelto a findByBoard", async () => {
+    const findByBoard = vi.fn(async () => [] as any)
+    const svc = service({}, { findByBoard })
 
-    const res = await svc.sendNote("emma_old", { type: "drawing", content: "<svg/>" } as any)
-    expect(create.mock.calls[0][0].boardUsername).toBe("emma_new")
-    expect(onNewDrawing).toHaveBeenCalledWith("emma_new")
-    expect(res.recipient.username).toBe("emma_new")
+    await svc.getMyNotes("emma", "u1")
+    expect(findByBoard).toHaveBeenCalledWith("emma", "u1")
   })
 })
