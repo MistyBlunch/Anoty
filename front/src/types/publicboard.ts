@@ -2,8 +2,9 @@ import type { Drawing } from "./drawing"
 
 export interface PublicBoardItem {
   noteId: string
-  content: string
+  content?: string
   authorName?: string
+  authorAvatar?: string
   createdAt?: string
   x: number
   y: number
@@ -12,6 +13,17 @@ export interface PublicBoardItem {
   rotation: number
   z: number
   transparent: boolean
+}
+
+export interface PublicBoardItemDelta {
+  noteId: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  rotation?: number
+  z?: number
+  transparent?: boolean
 }
 
 export interface PublicBoardDraft {

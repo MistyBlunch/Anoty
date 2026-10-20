@@ -4,9 +4,12 @@ import type { EmailServicePort } from "../ports/out/email-service.port.js"
 export interface DrawingNotificationConfig {
   appUrl?: string
   defaultLocale?: "es" | "en"
+  emailCooldownMs?: number
 }
 
 export class DrawingNotificationService {
+  private readonly lastSentByRecipient = new Map<string, number>()
+
   constructor(
     private readonly emailService: EmailServicePort,
     private readonly config: DrawingNotificationConfig = {},
@@ -15,6 +18,19 @@ export class DrawingNotificationService {
   async handle(event: DrawingCreatedEvent): Promise<void> {
     const { recipient, note } = event
     if (!recipient.email) return
+
+    const recipientKey = (recipient.email || recipient.username).toLowerCase()
+    const now = Date.now()
+    const cooldownMs = this.config.emailCooldownMs ?? 300_000 // 5 minutos por defecto
+
+    if (cooldownMs > 0) {
+      const lastSent = this.lastSentByRecipient.get(recipientKey)
+      if (lastSent && now - lastSent < cooldownMs) {
+        console.log(`ℹ️ [EmailNotification] Cooldown activo para @${recipient.username}. Omitiendo correo duplicado.`)
+        return
+      }
+      this.lastSentByRecipient.set(recipientKey, now)
+    }
 
     const appUrl = this.config.appUrl || process.env.APP_URL || "https://anoty.app"
     const defaultLocale =

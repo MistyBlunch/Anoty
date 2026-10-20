@@ -28,6 +28,7 @@ export const boardService = createBoardService({
 export const publicBoardService = createPublicBoardService({
   boardRepo: mongoPublicBoardRepository,
   userRepo: mongoUserRepository,
+  noteRepo: mongoNoteRepository,
   notifier: {
     onBoardChange: (board: PublicBoard) => {
       const channel = `${WS_BOARD_PREFIX}${board.slug}`
